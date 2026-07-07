@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Faculty Loading System</title>
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+          rel="stylesheet">
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest">
+    </script>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="bg-light">
+
+<div class="app-layout">
+
+    <!-- ========================= -->
+    <!-- Header -->
+    <!-- ========================= -->
+
+    <header class="app-header">
+        <h1 style="color:#1a237e;">
+            <i data-lucide="graduation-cap" style="width:32px;height:32px;"></i>
+            Faculty Loading System
+        </h1>
+    </header>
+
+    <!-- ========================= -->
+    <!-- Stats Row — 4 cards side by side -->
+    <!-- ========================= -->
+
+    <div class="stats-row">
+
+        <div class="stat-card" title="Total number of scheduled class loads">
+            <div class="stat-icon" style="color:#1a237e;">
+                <i data-lucide="clipboard-list" style="width:26px;height:26px;"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-label">Loads</span>
+                <span class="stat-value" style="color:#1a237e;" id="totalLoads">0</span>
+            </div>
+        </div>
+
+        <div class="stat-card" title="Unique faculty members assigned">
+            <div class="stat-icon" style="color:#2e7d32;">
+                <i data-lucide="badge-check" style="width:26px;height:26px;"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-label">Faculty</span>
+                <span class="stat-value" style="color:#2e7d32;" id="totalFaculty">0</span>
+            </div>
+        </div>
+
+        <div class="stat-card" title="Unique sections scheduled">
+            <div class="stat-icon" style="color:#e65100;">
+                <i data-lucide="users" style="width:26px;height:26px;"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-label">Section</span>
+                <span class="stat-value" style="color:#e65100;" id="totalSections">0</span>
+            </div>
+        </div>
+
+        <div class="stat-card" title="Unique subjects offered">
+            <div class="stat-icon" style="color:#6a1b9a;">
+                <i data-lucide="book-open" style="width:26px;height:26px;"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-label">Subject</span>
+                <span class="stat-value" style="color:#6a1b9a;" id="totalSubjects">0</span>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ========================= -->
+    <!-- + Add Faculty Load Button -->
+    <!-- ========================= -->
+
+    <button
+        type="button"
+        class="btn btn-lg text-white add-load-btn"
+        id="addLoadHeaderBtn"
+        style="background:linear-gradient(135deg,#1a237e,#283593);"
+        title="Open the form to add a new faculty load entry">
+        <i data-lucide="plus-circle" style="width:22px;height:22px;"></i>
+        Add Faculty Load
+    </button>
+
+    <!-- ========================= -->
+    <!-- Faculty Loading Form (hidden by default) -->
+    <!-- ========================= -->
+
+    <div class="card shadow-sm border-0 rounded-4" id="formCard">
+
+        <div class="card-header text-white rounded-top-4 d-flex align-items-center gap-2" style="background:linear-gradient(135deg,#1a237e,#283593);">
+            <i data-lucide="plus-circle" style="width:18px;height:18px;"></i>
+            Faculty Form
+            <span class="ms-auto badge bg-light text-dark small px-3 py-1" title="Press Ctrl + Enter to submit">
+                <i data-lucide="keyboard" style="width:12px;height:12px;"></i>
+                Ctrl + Enter
+            </span>
+            <button type="button" class="btn-close btn-close-white ms-2" id="closeFormBtn" aria-label="Close form"></button>
+        </div>
+
+        <div class="card-body">
+
+            <form id="loadForm" novalidate>
+
+                <input type="hidden" id="editIndex">
+
+                <div class="form-fields">
+
+                    <div class="form-row-custom">
+                        <div class="form-group">
+                            <label class="form-label fw-semibold" for="faculty">
+                                <i data-lucide="badge-check" style="width:16px;height:16px;"></i>
+                                Faculty
+                            </label>
+                            <div class="drop-field" data-field="faculty">
+                                <input
+                                    type="text"
+                                    class="form-control drop-target"
+                                    id="faculty"
+                                    list="facultyList"
+                                    required
+                                    autocomplete="off"
+                                    placeholder="e.g. Dr. Cruz, Prof. Santos"
+                                    aria-label="Faculty name">
+                                <datalist id="facultyList"></datalist>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label fw-semibold" for="section">
+                                <i data-lucide="users" style="width:16px;height:16px;"></i>
+                                Section
+                            </label>
+                            <div class="drop-field" data-field="section">
+                                <input
+                                    type="text"
+                                    class="form-control drop-target"
+                                    id="section"
+                                    list="sectionList"
+                                    required
+                                    autocomplete="off"
+                                    placeholder="e.g. BSIT-3A, BSCS-2B"
+                                    aria-label="Section name">
+                                <datalist id="sectionList"></datalist>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label fw-semibold" for="subject">
+                                <i data-lucide="book-open" style="width:16px;height:16px;"></i>
+                                Subject
+                            </label>
+                            <div class="drop-field" data-field="subject">
+                                <input
+                                    type="text"
+                                    class="form-control drop-target"
+                                    id="subject"
+                                    list="subjectList"
+                                    required
+                                    autocomplete="off"
+                                    placeholder="e.g. MATH101, CS301"
+                                    aria-label="Subject name or code">
+                                <datalist id="subjectList"></datalist>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label fw-semibold" for="day">
+                                <i data-lucide="calendar" style="width:16px;height:16px;"></i>
+                                Day
+                            </label>
+                            <div class="drop-field" data-field="day">
+                                <select class="form-select drop-target" id="day" required aria-label="Day of the week">
+                                    <option value="">Select Day</option>
+                                    <option>Monday</option>
+                                    <option>Tuesday</option>
+                                    <option>Wednesday</option>
+                                    <option>Thursday</option>
+                                    <option>Friday</option>
+                                    <option>Saturday</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label fw-semibold" for="startTime">
+                                <i data-lucide="clock" style="width:16px;height:16px;"></i>
+                                Start Time
+                            </label>
+                            <div class="drop-field" data-field="startTime">
+                                <input type="time" class="form-control drop-target" id="startTime" required aria-label="Class start time">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label fw-semibold" for="endTime">
+                                <i data-lucide="clock" style="width:16px;height:16px;"></i>
+                                End Time
+                            </label>
+                            <div class="drop-field" data-field="endTime">
+                                <input type="time" class="form-control drop-target" id="endTime" required aria-label="Class end time">
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="form-actions">
+                        <button
+                            type="submit"
+                            class="btn btn-lg text-white"
+                            id="submitBtn"
+                            style="background:linear-gradient(135deg,#1a237e,#283593);"
+                            title="Add this schedule entry (Ctrl + Enter)">
+                            <i data-lucide="plus-circle" style="width:20px;height:20px;"></i>
+                            <span id="submitBtnText">Add Load</span>
+                        </button>
+                        <button type="button" class="btn btn-lg btn-outline-secondary" id="cancelFormBtn">
+                            Cancel
+                        </button>
+                    </div>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+    <!-- ========================= -->
+    <!-- Search & Filter Bar -->
+    <!-- ========================= -->
+
+    <div class="search-bar">
+
+        <div class="search-input-group">
+            <i data-lucide="search" style="width:16px;height:16px;color:#6c757d;flex-shrink:0;"></i>
+            <input
+                type="text"
+                class="search-input"
+                id="searchInput"
+                placeholder="Search faculty, section, subject..."
+                aria-label="Search records">
+            <select
+                class="search-category"
+                id="searchCategory"
+                aria-label="Search in category">
+                <option value="all">All</option>
+                <option value="faculty">Faculty</option>
+                <option value="subject">Subject</option>
+                <option value="section">Section</option>
+            </select>
+        </div>
+
+        <div class="search-actions">
+            <select
+                class="day-filter"
+                id="dayFilter"
+                title="Filter by day of the week"
+                aria-label="Filter by day">
+                <option value="all">📅 All Days</option>
+                <option>Monday</option>
+                <option>Tuesday</option>
+                <option>Wednesday</option>
+                <option>Thursday</option>
+                <option>Friday</option>
+                <option>Saturday</option>
+            </select>
+
+            <div class="position-relative">
+                <input type="file" id="importFileInput" accept=".csv,.xlsx,.xls" style="display:none;" aria-label="Upload CSV or Excel file">
+                <button class="btn btn-sm text-white" style="background:#1565c0;" id="importCSVBtn" title="Browse or drag & drop a CSV or Excel file">
+                    <i data-lucide="upload" style="width:14px;height:14px;"></i>
+                    Import
+                </button>
+            </div>
+
+            <button class="btn btn-sm text-white" style="background:#2e7d32;" id="exportCSV" title="Download all records as CSV">
+                <i data-lucide="download" style="width:14px;height:14px;"></i>
+                Export
+            </button>
+
+            <button class="btn btn-sm text-white" style="background:#c62828;" data-bs-toggle="modal" data-bs-target="#resetModal" title="Start a new semester">
+                <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
+                Reset
+            </button>
+        </div>
+
+    </div>
+
+    <!-- ========================= -->
+    <!-- Faculty Loading Table -->
+    <!-- ========================= -->
+
+    <div class="card shadow-sm border-0 rounded-4" id="tableCard">
+
+        <!-- File Drop Zone Overlay -->
+        <div class="file-drop-zone" id="fileDropZone">
+            <div class="file-drop-content">
+                <i data-lucide="file-spreadsheet" style="width:48px;height:48px;color:#1565c0;"></i>
+                <h5 class="fw-semibold" style="color:#1565c0;">Drop your file here</h5>
+                <p class="text-muted small">Supports: .csv, .xlsx, .xls</p>
+            </div>
+        </div>
+
+        <div class="table-header-row">
+            <span class="table-title">
+                <i data-lucide="table" style="width:16px;height:16px;"></i>
+                Faculty Loading Table
+            </span>
+            
+            <span class="badge bg-secondary text-white small" id="recordCount">0 entries</span>
+        </div>
+
+        <div class="table-responsive rounded-bottom-4">
+
+            <table
+                class="table align-middle text-center mb-0"
+                id="mainTable"
+                role="grid"
+                aria-label="Faculty loading schedule records">
+
+                <thead>
+                    <tr>
+                        <th class="sortable" data-sort="faculty" scope="col" title="Click to sort">
+                            Faculty
+                            <span class="sort-indicator" aria-hidden="true">
+                                <i data-lucide="chevron-up" style="width:10px;height:10px;"></i>
+                                <i data-lucide="chevron-down" style="width:10px;height:10px;"></i>
+                            </span>
+                        </th>
+                        <th class="sortable" data-sort="section" scope="col" title="Click to sort">
+                            Section
+                            <span class="sort-indicator" aria-hidden="true">
+                                <i data-lucide="chevron-up" style="width:10px;height:10px;"></i>
+                                <i data-lucide="chevron-down" style="width:10px;height:10px;"></i>
+                            </span>
+                        </th>
+                        <th class="sortable" data-sort="subject" scope="col" title="Click to sort">
+                            Subject
+                            <span class="sort-indicator" aria-hidden="true">
+                                <i data-lucide="chevron-up" style="width:10px;height:10px;"></i>
+                                <i data-lucide="chevron-down" style="width:10px;height:10px;"></i>
+                            </span>
+                        </th>
+                        <th scope="col">Day</th>
+                        <th scope="col">Start</th>
+                        <th scope="col">End</th>
+                        <th scope="col" width="120">Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody id="loadingTable">
+
+                    <!-- Empty State -->
+                    <tr id="emptyState">
+                        <td colspan="7">
+                            <div class="empty-state-content">
+                                <img src="images/empty_state.png" alt="Empty state illustration" class="empty-state-image" />
+                                <h4 class="text-muted">Import a file to get started</h4>
+                                <p class="text-muted small mb-1">
+                                    Drag &amp; drop your CSV or Excel (.xlsx) file here, or click Import.
+                                </p>
+                                <p class="text-muted small mb-0">
+                                    Required headers: Faculty, Section, Subject, Day, Start Time, End Time.
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ========================= -->
+<!-- Toast Container -->
+<!-- ========================= -->
+
+<div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="true">
+</div>
+
+<!-- ========================= -->
+<!-- Delete Confirmation Modal -->
+<!-- ========================= -->
+
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4">
+            <div class="modal-header border-0" style="background:#c62828;color:white;border-radius:16px 16px 0 0;">
+                <h5 class="modal-title" id="deleteModalLabel">
+                    <i data-lucide="alert-triangle" style="width:20px;height:20px;"></i>
+                    Delete Record
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close dialog"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <div>
+                    <i data-lucide="trash-2" style="width:48px;height:48px;color:#c62828;"></i>
+                </div>
+                <p class="mb-0 fw-semibold mt-2">Are you sure you want to delete this record?</p>
+                <p class="text-muted small mb-0">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer border-0 justify-content-center gap-2">
+                <button type="button" class="btn btn-secondary px-4 rounded-pill" data-bs-dismiss="modal">
+                    <i data-lucide="x-circle" style="width:16px;height:16px;"></i> Cancel
+                </button>
+                <button type="button" class="btn text-white px-4 rounded-pill" id="confirmDelete" style="background:#c62828;">
+                    <i data-lucide="trash-2" style="width:16px;height:16px;"></i> Delete
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========================= -->
+<!-- Reset Confirmation -->
+<!-- ========================= -->
+
+<div class="modal fade" id="resetModal" tabindex="-1" aria-labelledby="resetModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4">
+            <div class="modal-header border-0" style="background:#c62828;color:white;border-radius:16px 16px 0 0;">
+                <h5 class="modal-title" id="resetModalLabel">
+                    <i data-lucide="alert-triangle" style="width:20px;height:20px;"></i>
+                    Start New Semester
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close dialog"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <div>
+                    <i data-lucide="rotate-ccw" style="width:48px;height:48px;color:#c62828;"></i>
+                </div>
+                <p class="mb-0 fw-semibold mt-2">Start a new semester?</p>
+                <p class="text-muted small mb-2">All records will be permanently deleted.</p>
+                <p class="text-muted small mb-0">
+                    <i data-lucide="download" style="width:14px;height:14px;"></i>
+                    Tip: <strong>Export</strong> your data first.
+                </p>
+            </div>
+            <div class="modal-footer border-0 justify-content-center gap-2">
+                <button type="button" class="btn btn-secondary px-4 rounded-pill" data-bs-dismiss="modal">
+                    <i data-lucide="x-circle" style="width:16px;height:16px;"></i> Cancel
+                </button>
+                <button type="button" class="btn text-white px-4 rounded-pill" id="confirmReset" style="background:#c62828;">
+                    <i data-lucide="check-circle" style="width:16px;height:16px;"></i> Yes, Start New Semester
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SheetJS for Excel parsing -->
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js">
+</script>
+
+<!-- Bootstrap -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- JavaScript -->
+<script src="script.js"></script>
+
+</body>
+</html>
