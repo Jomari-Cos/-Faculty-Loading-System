@@ -7,6 +7,26 @@ let deleteIndex = -1;
 let sortColumn = null;
 let sortDirection = 'asc';
 
+const STORAGE_KEY = "facultyLoadingSystem.loads";
+
+function saveLoads() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(loads));
+}
+
+function loadSavedLoads() {
+    try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (!saved) return;
+
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+            loads = parsed;
+        }
+    } catch {
+        loads = [];
+    }
+}
+
 // Form Elements
 const form = document.getElementById("loadForm");
 const editIndex = document.getElementById("editIndex");
@@ -359,6 +379,7 @@ function importRows(rows, fileName) {
 
     // Append to existing loads
     newLoads.forEach(l => loads.push(l));
+    saveLoads();
 
     renderTable();
     updateSummary();
@@ -562,6 +583,8 @@ form.addEventListener("submit", function (e) {
         submitBtn.title = "Add this schedule entry (Ctrl + Enter)";
         showToast(`Entry updated successfully.`, "info");
     }
+
+    saveLoads();
 
     // Keep Faculty and Section values, clear the rest
     const facultyVal = faculty.value;
@@ -830,6 +853,8 @@ confirmDelete.addEventListener("click", function () {
     loads.splice(deleteIndex, 1);
     deleteIndex = -1;
 
+    saveLoads();
+
     deleteModal.hide();
 
     renderTable();
@@ -886,6 +911,7 @@ exportCSV.addEventListener("click", function () {
 confirmReset.addEventListener("click", function () {
     const count = loads.length;
     loads = [];
+    localStorage.removeItem(STORAGE_KEY);
 
     form.reset();
     editIndex.value = "";
@@ -992,6 +1018,7 @@ cancelFormBtn.addEventListener("click", hideForm);
 // Initialize Lucide + App
 // =====================================
 
+loadSavedLoads();
 lucide.createIcons();
 
 setupDropTargets();
