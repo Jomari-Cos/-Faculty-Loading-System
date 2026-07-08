@@ -5,6 +5,7 @@
 let loads = [];
 let sections = [];
 let subjects = [];
+let rooms = [];
 let deleteIndex = -1;
 let sortColumn = null;
 let sortDirection = 'asc';
@@ -12,6 +13,7 @@ let sortDirection = 'asc';
 const STORAGE_KEY_LOADS = "facultyLoadingSystem.loads";
 const STORAGE_KEY_SECTIONS = "facultyLoadingSystem.sections";
 const STORAGE_KEY_SUBJECTS = "facultyLoadingSystem.subjects";
+const STORAGE_KEY_ROOMS = "facultyLoadingSystem.rooms";
 
 // ===============================
 // localStorage Functions
@@ -68,6 +70,23 @@ function loadSavedSubjects() {
     }
 }
 
+function saveRooms() {
+    localStorage.setItem(STORAGE_KEY_ROOMS, JSON.stringify(rooms));
+}
+
+function loadSavedRooms() {
+    try {
+        const saved = localStorage.getItem(STORAGE_KEY_ROOMS);
+        if (!saved) return;
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+            rooms = parsed;
+        }
+    } catch {
+        rooms = [];
+    }
+}
+
 // ===============================
 // Form Elements
 // ===============================
@@ -83,25 +102,37 @@ const subject = document.getElementById("subject");
 const day = document.getElementById("day");
 const startTime = document.getElementById("startTime");
 const endTime = document.getElementById("endTime");
+const room = document.getElementById("room");
+const units = document.getElementById("units");
 
 // Datalists
 const facultyList = document.getElementById("facultyList");
 const subjectSuggestions = document.getElementById("subjectSuggestions");
 
 // Tables
-const loadingTable = document.getElementById("loadingTable");
 const loadingTableFull = document.getElementById("loadingTableFull");
-const emptyState = document.getElementById("emptyState");
-const recordCount = document.getElementById("recordCount");
 const recordCountFull = document.getElementById("recordCountFull");
 const sectionsTableBody = document.getElementById("sectionsTableBody");
 const subjectsTableBody = document.getElementById("subjectsTableBody");
+const roomsTableBody = document.getElementById("roomsTableBody");
+const facultyTableBody = document.getElementById("facultyTableBody");
 
 // Summary
 const totalLoads = document.getElementById("totalLoads");
 const totalFaculty = document.getElementById("totalFaculty");
 const totalSections = document.getElementById("totalSections");
 const totalSubjects = document.getElementById("totalSubjects");
+const totalRooms = document.getElementById("totalRooms");
+
+// Section Buttons
+const sectionButtonsContainer = document.getElementById("sectionButtonsContainer");
+const sectionCount = document.getElementById("sectionCount");
+
+// Section Schedule Modal
+const sectionScheduleModal = new bootstrap.Modal(document.getElementById("sectionScheduleModal"));
+const sectionScheduleTitle = document.getElementById("sectionScheduleTitle");
+const sectionScheduleTableBody = document.getElementById("sectionScheduleTableBody");
+let currentSectionFullName = "";
 
 // Buttons
 const exportCSV = document.getElementById("exportCSV");
@@ -124,6 +155,9 @@ const navItems = document.querySelectorAll(".nav-item[data-view]");
 const viewContainers = document.querySelectorAll(".view-container");
 const manageSectionsBtn = document.getElementById("manageSectionsBtn");
 const manageSubjectsBtn = document.getElementById("manageSubjectsBtn");
+const manageRoomsBtn = document.getElementById("manageRoomsBtn");
+const navFaculty = document.getElementById("navFaculty");
+const navRooms = document.getElementById("navRooms");
 
 // Section Management
 const sectionForm = document.getElementById("sectionForm");
@@ -143,6 +177,19 @@ const editSubjectIndex = document.getElementById("editSubjectIndex");
 const subjectBtnText = document.getElementById("subjectBtnText");
 const cancelSubjectBtn = document.getElementById("cancelSubjectBtn");
 const subjectSearchInput = document.getElementById("subjectSearchInput");
+const applyToAllYearSections = document.getElementById("applyToAllYearSections");
+
+// Room Management
+const roomForm = document.getElementById("roomForm");
+const roomName = document.getElementById("roomName");
+const roomCapacity = document.getElementById("roomCapacity");
+const editRoomIndex = document.getElementById("editRoomIndex");
+const roomBtnText = document.getElementById("roomBtnText");
+const cancelRoomBtn = document.getElementById("cancelRoomBtn");
+const roomSearchInput = document.getElementById("roomSearchInput");
+
+// Faculty List
+const facultySearchInput = document.getElementById("facultySearchInput");
 
 // Search & Filter
 const searchInput = document.getElementById("searchInput");
@@ -171,7 +218,9 @@ const HEADER_MAP = {
     "end time": "endTime",
     "endtime": "endTime",
     "time start": "startTime",
-    "time end": "endTime"
+    "time end": "endTime",
+    "room": "room",
+    "units": "units"
 };
 
 // ===============================
@@ -224,6 +273,9 @@ function updateDatalists() {
 
     // Update section dropdown in Subject Management
     updateSubjectSectionDropdown();
+
+    // Update room dropdown
+    updateRoomDropdown();
 }
 
 // ===============================
@@ -282,6 +334,27 @@ function updateSubjectDropdown(selectedSection) {
 
         if (currentValue) {
             subjectDropdown.value = currentValue;
+        }
+    }
+}
+
+// ===============================
+// Update Room Dropdown
+// ===============================
+
+function updateRoomDropdown() {
+    const roomDropdown = document.getElementById("room");
+    if (roomDropdown) {
+        const currentValue = roomDropdown.value;
+        roomDropdown.innerHTML = '<option value="">Select Room</option>';
+        rooms.forEach(r => {
+            const opt = document.createElement("option");
+            opt.value = r.name;
+            opt.textContent = r.name;
+            roomDropdown.appendChild(opt);
+        });
+        if (currentValue) {
+            roomDropdown.value = currentValue;
         }
     }
 }
@@ -350,7 +423,7 @@ function mapColumns(headers) {
     const mapping = {};
     headers.forEach((header, index) => {
         const key = header.toString().trim().toLowerCase();
-        const clean = key.replace(/^["\']|["\']$/g, "");
+        const clean = key.replace(/^["']|["']$/g, "");
         const field = HEADER_MAP[clean];
         if (field) {
             mapping[index] = field;
@@ -438,6 +511,59 @@ function convertToLoads(rows, mapping) {
     return result;
 }
 
+// ===============================
+// Extract Sections from Loads
+// ===============================
+
+function extractSectionsFromLoads() {
+    // Extract unique sections from loads and add them to sections array
+    const uniqueSections = new Set(loads.map(l => l.section));
+    
+    uniqueSections.forEach(sectionName => {
+        // Check if section already exists
+        if (!sections.some(s => s.fullName === sectionName)) {
+            // Parse section name to extract program, year, and name
+            // Expected format: "Program Year SectionName" (e.g., "BSCpE 1st Year A")
+            const parts = sectionName.split(" ");
+            let program = "";
+            let year = "";
+            let name = "";
+            
+            if (parts.length >= 3) {
+                // Try to identify year level
+                const yearKeywords = ["1st", "2nd", "3rd", "4th", "5th"];
+                const yearIndex = parts.findIndex(p => yearKeywords.includes(p));
+                
+                if (yearIndex !== -1) {
+                    // Year found - program is before, section name is after
+                    program = parts.slice(0, yearIndex).join(" ");
+                    year = parts[yearIndex] + " Year";
+                    name = parts.slice(yearIndex + 1).join(" ");
+                } else {
+                    // No year found - assume format is "Program SectionName"
+                    program = parts[0] || "";
+                    name = parts.slice(1).join(" ") || sectionName;
+                }
+            } else if (parts.length === 2) {
+                program = parts[0] || "";
+                name = parts[1] || sectionName;
+            } else {
+                // Single part - use as section name
+                name = sectionName;
+            }
+            
+            sections.push({
+                program: program || "Unknown",
+                year: year || "Unknown Year",
+                name: name || sectionName,
+                fullName: sectionName
+            });
+        }
+    });
+    
+    saveSections();
+}
+
 function processImportFile(file) {
     const reader = new FileReader();
     const fileName = file.name;
@@ -521,9 +647,13 @@ function importRows(rows, fileName) {
     validLoads.forEach(l => loads.push(l));
     saveLoads();
 
+    // Extract sections from imported loads
+    extractSectionsFromLoads();
+
     renderTable();
     updateSummary();
     updateDatalists();
+    renderSectionButtons();
     lucide.createIcons();
 
     showToast(
@@ -551,6 +681,7 @@ function checkConflict(newLoad, ignoreIndex = -1) {
         const load = loads[i];
         if (load.day !== newLoad.day) continue;
 
+        // Same faculty, same time - conflict
         if (
             load.faculty === newLoad.faculty &&
             hasOverlap(newLoad.startTime, newLoad.endTime, load.startTime, load.endTime)
@@ -558,11 +689,31 @@ function checkConflict(newLoad, ignoreIndex = -1) {
             return `"${load.faculty}" is already scheduled on ${load.day} from ${load.startTime} to ${load.endTime}.`;
         }
 
+        // Same section, same time - conflict
         if (
             load.section === newLoad.section &&
             hasOverlap(newLoad.startTime, newLoad.endTime, load.startTime, load.endTime)
         ) {
             return `Section "${load.section}" already has "${load.subject}" on ${load.day} from ${load.startTime} to ${load.endTime}.`;
+        }
+
+        // Same subject & same section - only available if not same professor
+        if (
+            load.subject === newLoad.subject &&
+            load.section === newLoad.section &&
+            load.faculty !== newLoad.faculty &&
+            hasOverlap(newLoad.startTime, newLoad.endTime, load.startTime, load.endTime)
+        ) {
+            return `Subject "${load.subject}" is already assigned to section "${load.section}" on ${load.day} from ${load.startTime} to ${load.endTime} with a different professor.`;
+        }
+
+        // Same room, same time - conflict
+        if (
+            load.room === newLoad.room &&
+            load.room &&
+            hasOverlap(newLoad.startTime, newLoad.endTime, load.startTime, load.endTime)
+        ) {
+            return `Room "${load.room}" is already booked on ${load.day} from ${load.startTime} to ${load.endTime}.`;
         }
     }
 
@@ -588,7 +739,9 @@ form.addEventListener("submit", function (e) {
         subject: subject.value,
         day: day.value,
         startTime: startTime.value,
-        endTime: endTime.value
+        endTime: endTime.value,
+        room: room.value || "",
+        units: units.value || ""
     };
 
     const index = editIndex.value;
@@ -620,6 +773,8 @@ form.addEventListener("submit", function (e) {
     day.value = "";
     startTime.value = "";
     endTime.value = "";
+    room.value = "";
+    units.value = "";
 
     faculty.value = facultyVal;
     section.value = sectionVal;
@@ -627,6 +782,7 @@ form.addEventListener("submit", function (e) {
     renderTable();
     updateSummary();
     updateDatalists();
+    renderSectionButtons();
     lucide.createIcons();
 
     // Scroll back to form for next entry
@@ -690,29 +846,10 @@ function getFilteredData() {
 // Render Table
 // ===============================
 
-function getEmptyStateRow() {
-    return `
-        <tr id="emptyState">
-            <td colspan="7">
-                <div class="empty-state-content">
-                    <img src="images/empty_state.png" alt="Empty state illustration" class="empty-state-image" />
-                    <h4 class="text-muted">No faculty loads yet</h4>
-                    <p class="text-muted small mb-1">
-                        Add your first faculty load or import data from a CSV/Excel file.
-                    </p>
-                    <p class="text-muted small mb-0">
-                        Required fields: Faculty, Section, Subject, Day, Start Time, End Time.
-                    </p>
-                </div>
-            </td>
-        </tr>
-    `;
-}
-
 function getEmptyStateRowFull() {
     return `
         <tr id="emptyStateFull">
-            <td colspan="7">
+            <td colspan="9">
                 <div class="empty-state-content">
                     <img src="images/empty_state.png" alt="Empty state illustration" class="empty-state-image" />
                     <h4 class="text-muted">No faculty loads yet</h4>
@@ -731,15 +868,6 @@ function getEmptyStateRowFull() {
 function renderTable() {
     const filtered = getFilteredData();
 
-    // Update Dashboard view table
-    if (loads.length === 0) {
-        loadingTable.innerHTML = getEmptyStateRow();
-        recordCount.textContent = "0 entries";
-    } else {
-        loadingTable.innerHTML = "";
-        recordCount.textContent = `${loads.length} entr${loads.length !== 1 ? "ies" : "y"}`;
-    }
-
     // Update Faculty Loading view table
     if (loadingTableFull) {
         if (loads.length === 0) {
@@ -753,7 +881,7 @@ function renderTable() {
         if (filtered.length === 0 && loads.length > 0) {
             loadingTableFull.innerHTML = `
                 <tr>
-                    <td colspan="7" class="text-muted py-4">
+                    <td colspan="9" class="text-muted py-4">
                         <i data-lucide="search" style="width:16px;height:16px;"></i>
                         No records match your search. Try different keywords or clear the filter.
                     </td>
@@ -802,6 +930,18 @@ function renderTable() {
                             </span>
                         </td>
                         <td>
+                            <span class="badge-room">
+                                <i data-lucide="building-2" style="width:14px;height:14px;" class="me-1"></i>
+                                ${escapeHtml(load.room || '-')}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge-units">
+                                <i data-lucide="hash" style="width:14px;height:14px;" class="me-1"></i>
+                                ${load.units || '-'}
+                            </span>
+                        </td>
+                        <td>
                             <button
                                 class="btn btn-warning btn-sm action-btn"
                                 onclick="editLoad(${originalIndex})"
@@ -821,78 +961,6 @@ function renderTable() {
         }
     }
 
-    // Update Dashboard view table (for when there are records)
-    if (loads.length > 0 && filtered.length > 0) {
-        loadingTable.innerHTML = "";
-        filtered.forEach((load, index) => {
-            const originalIndex = loads.indexOf(load);
-
-            loadingTable.innerHTML += `
-                <tr class="clickable-row" data-index="${originalIndex}" draggable="true">
-                    <td>
-                        <span class="badge-faculty">
-                            <i data-lucide="badge-check" style="width:14px;height:14px;" class="me-1"></i>
-                            ${escapeHtml(load.faculty)}
-                        </span>
-                    </td>
-                    <td>
-                        <span class="badge-section">
-                            <i data-lucide="users" style="width:14px;height:14px;" class="me-1"></i>
-                            ${escapeHtml(load.section)}
-                        </span>
-                    </td>
-                    <td>
-                        <span class="badge-subject">
-                            <i data-lucide="book-open" style="width:14px;height:14px;" class="me-1"></i>
-                            ${escapeHtml(load.subject)}
-                        </span>
-                    </td>
-                    <td>
-                        <span class="badge-day">
-                            <i data-lucide="calendar" style="width:14px;height:14px;" class="me-1"></i>
-                            ${escapeHtml(load.day)}
-                        </span>
-                    </td>
-                    <td>
-                        <span class="badge-time">
-                            <i data-lucide="clock" style="width:14px;height:14px;" class="me-1"></i>
-                            ${load.startTime}
-                        </span>
-                    </td>
-                    <td>
-                        <span class="badge-time">
-                            <i data-lucide="clock" style="width:14px;height:14px;" class="me-1"></i>
-                            ${load.endTime}
-                        </span>
-                    </td>
-                    <td>
-                        <button
-                            class="btn btn-warning btn-sm action-btn"
-                            onclick="editLoad(${originalIndex})"
-                            title="Edit this record">
-                            <i data-lucide="pencil" style="width:14px;height:14px;"></i>
-                        </button>
-                        <button
-                            class="btn btn-danger btn-sm action-btn"
-                            onclick="confirmDeleteLoad(${originalIndex})"
-                            title="Delete this record">
-                            <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
-                        </button>
-                    </td>
-                </tr>
-            `;
-        });
-    } else if (loads.length > 0 && filtered.length === 0) {
-        loadingTable.innerHTML = `
-            <tr>
-                <td colspan="7" class="text-muted py-4">
-                    <i data-lucide="search" style="width:16px;height:16px;"></i>
-                    No records match your search. Try different keywords or clear the filter.
-                </td>
-            </tr>
-        `;
-    }
-
     attachDragEvents();
     lucide.createIcons();
 }
@@ -902,27 +970,6 @@ function renderTable() {
 // ===============================
 
 function attachDragEvents() {
-    // Dashboard view table
-    document.querySelectorAll("#loadingTable .clickable-row").forEach(row => {
-        row.setAttribute("draggable", "true");
-
-        row.addEventListener("dragstart", function (e) {
-            const index = parseInt(this.dataset.index);
-            if (isNaN(index)) return;
-
-            const load = loads[index];
-            if (!load) return;
-
-            e.dataTransfer.setData("application/json", JSON.stringify(load));
-            e.dataTransfer.effectAllowed = "copy";
-            this.classList.add("dragging");
-        });
-
-        row.addEventListener("dragend", function () {
-            this.classList.remove("dragging");
-        });
-    });
-
     // Faculty Loading view table
     if (loadingTableFull) {
         document.querySelectorAll("#loadingTableFull .clickable-row").forEach(row => {
@@ -970,6 +1017,8 @@ function editLoad(index) {
     day.value = load.day;
     startTime.value = load.startTime;
     endTime.value = load.endTime;
+    room.value = load.room || "";
+    units.value = load.units || "";
 
     editIndex.value = index;
     submitBtnText.textContent = "Update Load";
@@ -1008,6 +1057,7 @@ confirmDelete.addEventListener("click", function () {
     renderTable();
     updateSummary();
     updateDatalists();
+    renderSectionButtons();
     showToast(`"${deleted.faculty}" — ${deleted.subject} has been removed.`, "info");
 });
 
@@ -1020,6 +1070,132 @@ function updateSummary() {
     totalFaculty.textContent = new Set(loads.map(load => load.faculty)).size;
     totalSections.textContent = sections.length;
     totalSubjects.textContent = subjects.length;
+    if (totalRooms) totalRooms.textContent = rooms.length;
+}
+
+// ===============================
+// Render Section Schedule Table
+// ===============================
+
+function renderSectionScheduleTable(sectionFullName) {
+    if (!sectionScheduleTableBody) return;
+
+    // Time slots from 7:00 AM to 11:00 PM
+    const timeSlots = [
+        "7:00–8:00 AM", "8:00–9:00 AM", "9:00–10:00 AM", "10:00–11:00 AM",
+        "11:00–12:00 PM", "12:00–1:00 PM", "1:00–2:00 PM", "2:00–3:00 PM",
+        "3:00–4:00 PM", "4:00–5:00 PM", "5:00–6:00 PM", "6:00–7:00 PM",
+        "7:00–8:00 PM", "8:00–9:00 PM", "9:00–10:00 PM", "10:00–11:00 PM"
+    ];
+
+    const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+    // Get loads for this section
+    const sectionLoads = loads.filter(l => l.section === sectionFullName);
+
+    // Build schedule grid
+    let tableHTML = "";
+
+    timeSlots.forEach((timeSlot, timeIndex) => {
+        tableHTML += `<tr>`;
+        tableHTML += `<td class="time-slot">${timeSlot}</td>`;
+
+        days.forEach(day => {
+            // Find loads for this time slot and day
+            const cellLoads = sectionLoads.filter(l => {
+                // Check if this load falls within this time slot
+                const loadStart = l.startTime;
+                const loadEnd = l.endTime;
+                const slotStart = String(timeIndex + 7).padStart(2, '0') + ":00";
+                const slotEnd = String(timeIndex + 8).padStart(2, '0') + ":00";
+
+                // Convert to 24-hour format for comparison
+                const startHour = parseInt(loadStart.split(':')[0]);
+                const endHour = parseInt(loadEnd.split(':')[0]);
+                const slotStartHour = timeIndex + 7;
+                const slotEndHour = timeIndex + 8;
+
+                // Check if load is on this day and overlaps with this time slot
+                return l.day === day && 
+                       ((startHour < slotEndHour && endHour > slotStartHour) ||
+                        (startHour <= slotStartHour && endHour >= slotEndHour));
+            });
+
+if (cellLoads.length > 0) {
+                // Show the first load (or combine multiple)
+                const load = cellLoads[0];
+                tableHTML += `
+                    <td class="schedule-cell">
+                        <div class="schedule-item">
+                            <div class="schedule-subject">${escapeHtml(load.subject)}</div>
+                            <div class="schedule-faculty">${escapeHtml(load.faculty)}</div>
+                            <div class="schedule-time">${load.startTime} - ${load.endTime}</div>
+                            <div class="schedule-room">${load.room ? escapeHtml(load.room) : ''}</div>
+                        </div>
+                    </td>
+                `;
+            } else {
+                tableHTML += `<td class="empty-cell"></td>`;
+            }
+        });
+
+        tableHTML += `</tr>`;
+    });
+
+    sectionScheduleTableBody.innerHTML = tableHTML;
+}
+
+// ===============================
+// Render Section Buttons (Dashboard)
+// ===============================
+
+function renderSectionButtons() {
+    if (!sectionButtonsContainer) return;
+
+    // Update section count badge
+    if (sectionCount) {
+        sectionCount.textContent = `${sections.length} section${sections.length !== 1 ? 's' : ''}`;
+    }
+
+    if (sections.length === 0) {
+        sectionButtonsContainer.innerHTML = `
+            <div class="empty-state-content" id="sectionButtonsEmpty">
+                <img src="images/empty_state.png" alt="Empty state illustration" class="empty-state-image" />
+                <h4 class="text-muted">No sections added yet</h4>
+                <p class="text-muted small mb-1">
+                    Add sections in Section Management to see them here.
+                </p>
+            </div>
+        `;
+        return;
+    }
+
+    sectionButtonsContainer.innerHTML = "";
+
+    sections.forEach((s, index) => {
+        // Count loads for this section
+        const loadCount = loads.filter(l => l.section === s.fullName).length;
+
+        const button = document.createElement("button");
+        button.className = "section-button";
+        button.innerHTML = `
+            <span class="section-name">${escapeHtml(s.fullName)}</span>
+            <span class="section-details">${escapeHtml(s.program)} - ${escapeHtml(s.year)}</span>
+            <span class="section-load-count">${loadCount} load${loadCount !== 1 ? 's' : ''}</span>
+        `;
+
+// Add click handler to show schedule modal
+        button.addEventListener("click", function() {
+            // Format: "BSCpE 1st Year A Schedule" or "BS COMPUTER ENGINEERING (BSCpE) 1st Year A Schedule"
+            const programDisplay = s.program === "BSCpE" ? "BS COMPUTER ENGINEERING (BSCpE)" : s.program;
+            sectionScheduleTitle.textContent = `${programDisplay} ${s.year} ${s.name} Schedule`;
+            currentSectionFullName = s.fullName;
+            renderSectionScheduleTable(s.fullName);
+            sectionScheduleModal.show();
+        });
+
+        sectionButtonsContainer.appendChild(button);
+    });
 }
 
 // ===============================
@@ -1032,10 +1208,10 @@ exportCSV.addEventListener("click", function () {
         return;
     }
 
-    let csv = "Faculty,Section,Subject,Day,Start Time,End Time\n";
+    let csv = "Faculty,Section,Subject,Day,Start Time,End Time,Room,Units\n";
 
     loads.forEach(load => {
-        csv += `"${load.faculty}","${load.section}","${load.subject}","${load.day}","${load.startTime}","${load.endTime}"\n`;
+        csv += `"${load.faculty}","${load.section}","${load.subject}","${load.day}","${load.startTime}","${load.endTime}","${load.room || ''}","${load.units || ''}"\n`;
     });
 
     const blob = new Blob([csv], { type: "text/csv" });
@@ -1057,30 +1233,36 @@ exportCSV.addEventListener("click", function () {
 // ===============================
 
 confirmReset.addEventListener("click", function () {
-    const count = loads.length + sections.length + subjects.length;
     loads = [];
     sections = [];
     subjects = [];
+    rooms = [];
     localStorage.removeItem(STORAGE_KEY_LOADS);
     localStorage.removeItem(STORAGE_KEY_SECTIONS);
     localStorage.removeItem(STORAGE_KEY_SUBJECTS);
+    localStorage.removeItem(STORAGE_KEY_ROOMS);
 
     form.reset();
     sectionForm.reset();
     subjectForm.reset();
+    if (roomForm) roomForm.reset();
     editIndex.value = "";
     editSectionIndex.value = "";
     editSubjectIndex.value = "";
+    if (editRoomIndex) editRoomIndex.value = "";
     submitBtnText.textContent = "Add Load";
     submitBtn.title = "Add this schedule entry (Ctrl + Enter)";
     sectionBtnText.textContent = "Add Section";
     subjectBtnText.textContent = "Add Subject";
+    if (roomBtnText) roomBtnText.textContent = "Add Room";
 
     renderTable();
     renderSectionsTable();
     renderSubjectsTable();
+    renderRoomsTable();
     updateSummary();
     updateDatalists();
+    renderSectionButtons();
 
     bootstrap.Modal.getInstance(document.getElementById("resetModal")).hide();
 
@@ -1130,27 +1312,6 @@ sortableHeaders.forEach(header => {
 // Clickable Row — Browse & Populate Form
 // ===============================
 
-loadingTable.addEventListener("click", function (e) {
-    const row = e.target.closest(".clickable-row");
-    if (!row) return;
-
-    const index = parseInt(row.dataset.index);
-    if (isNaN(index)) return;
-
-    const load = loads[index];
-    if (!load) return;
-
-    faculty.value = load.faculty;
-    section.value = load.section;
-    subject.value = load.subject;
-    day.value = load.day;
-    startTime.value = load.startTime;
-    endTime.value = load.endTime;
-
-    form.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    faculty.focus();
-});
-
 // Clickable Row for Faculty Loading view
 if (loadingTableFull) {
     loadingTableFull.addEventListener("click", function (e) {
@@ -1169,6 +1330,8 @@ if (loadingTableFull) {
         day.value = load.day;
         startTime.value = load.startTime;
         endTime.value = load.endTime;
+        room.value = load.room || "";
+        units.value = load.units || "";
 
         // Show the form when clicking from Faculty Loading view
         showForm();
@@ -1297,6 +1460,7 @@ sectionForm.addEventListener("submit", function(e) {
     renderSectionsTable();
     updateDatalists();
     updateSummary();
+    renderSectionButtons();
 });
 
 sectionSearchInput.addEventListener("input", renderSectionsTable);
@@ -1339,6 +1503,7 @@ function deleteSection(index) {
     renderTable();
     updateDatalists();
     updateSummary();
+    renderSectionButtons();
 
     showToast(`Section "${deleted.fullName}" and ${subjectCount} associated subjects and ${loadCount} loads have been removed.`, "info");
 }
@@ -1388,44 +1553,104 @@ function renderSubjectsTable() {
     lucide.createIcons();
 }
 
+// Apply to all sections of same year checkbox handler
+if (applyToAllYearSections) {
+    applyToAllYearSections.addEventListener("change", function() {
+        if (this.checked) {
+            subjectSection.disabled = true;
+        } else {
+            subjectSection.disabled = false;
+        }
+    });
+}
+
 subjectForm.addEventListener("submit", function(e) {
     e.preventDefault();
 
     const section = subjectSection.value;
     const name = subjectNameInput.value.trim();
 
-    if (!section || !name) {
-        showToast("All fields are required.", "error");
+    if (!name) {
+        showToast("Subject name is required.", "error");
         return;
     }
 
-    // Check for duplicate within the same section
-    const existingIndex = subjects.findIndex(s => s.section === section && s.name === name);
-    if (existingIndex !== -1 && existingIndex !== Number(editSubjectIndex.value)) {
-        showToast(`Subject "${name}" already exists in section "${section}".`, "error");
-        return;
-    }
+    if (applyToAllYearSections && applyToAllYearSections.checked) {
+        // Apply to all sections of the same year level
+        if (!section) {
+            showToast("Please select a section to determine the year level.", "error");
+            return;
+        }
 
-    const subjectData = {
-        section,
-        name
-    };
+        const selectedSection = sections.find(s => s.fullName === section);
+        if (!selectedSection) {
+            showToast("Selected section not found.", "error");
+            return;
+        }
 
-    if (editSubjectIndex.value === "") {
-        subjects.push(subjectData);
-        showToast(`Subject "${name}" has been added to ${section}.`, "success");
+        const yearLevel = selectedSection.year;
+        const sectionsOfYear = sections.filter(s => s.year === yearLevel);
+
+        let addedCount = 0;
+        let skippedCount = 0;
+
+        sectionsOfYear.forEach(s => {
+            const existingIndex = subjects.findIndex(sub => sub.section === s.fullName && sub.name === name);
+            if (existingIndex === -1) {
+                subjects.push({ section: s.fullName, name });
+                addedCount++;
+            } else {
+                skippedCount++;
+            }
+        });
+
+        saveSubjects();
+        subjectForm.reset();
+        if (applyToAllYearSections) applyToAllYearSections.checked = false;
+        renderSubjectsTable();
+        updateDatalists();
+        updateSummary();
+
+        if (addedCount > 0) {
+            showToast(`Subject "${name}" has been added to ${addedCount} section(s) of ${yearLevel} year.`, "success");
+        }
+        if (skippedCount > 0) {
+            showToast(`Skipped ${skippedCount} section(s) - subject already exists.`, "info");
+        }
     } else {
-        subjects[editSubjectIndex.value] = subjectData;
-        editSubjectIndex.value = "";
-        subjectBtnText.textContent = "Add Subject";
-        showToast(`Subject updated successfully.`, "info");
-    }
+        // Original behavior - add to single section
+        if (!section) {
+            showToast("All fields are required.", "error");
+            return;
+        }
 
-    saveSubjects();
-    subjectForm.reset();
-    renderSubjectsTable();
-    updateDatalists();
-    updateSummary();
+        const existingIndex = subjects.findIndex(s => s.section === section && s.name === name);
+        if (existingIndex !== -1 && existingIndex !== Number(editSubjectIndex.value)) {
+            showToast(`Subject "${name}" already exists in section "${section}".`, "error");
+            return;
+        }
+
+        const subjectData = {
+            section,
+            name
+        };
+
+        if (editSubjectIndex.value === "") {
+            subjects.push(subjectData);
+            showToast(`Subject "${name}" has been added to ${section}.`, "success");
+        } else {
+            subjects[editSubjectIndex.value] = subjectData;
+            editSubjectIndex.value = "";
+            subjectBtnText.textContent = "Add Subject";
+            showToast(`Subject updated successfully.`, "info");
+        }
+
+        saveSubjects();
+        subjectForm.reset();
+        renderSubjectsTable();
+        updateDatalists();
+        updateSummary();
+    }
 });
 
 subjectSearchInput.addEventListener("input", renderSubjectsTable);
@@ -1434,6 +1659,8 @@ cancelSubjectBtn.addEventListener("click", function() {
     subjectForm.reset();
     editSubjectIndex.value = "";
     subjectBtnText.textContent = "Add Subject";
+    if (applyToAllYearSections) applyToAllYearSections.checked = false;
+    subjectSection.disabled = false;
 });
 
 function editSubject(index) {
@@ -1488,6 +1715,27 @@ manageSectionsBtn.addEventListener("click", function() {
 manageSubjectsBtn.addEventListener("click", function() {
     switchView('subjects');
 });
+
+if (manageRoomsBtn) {
+    manageRoomsBtn.addEventListener("click", function() {
+        switchView('rooms');
+    });
+}
+
+if (navRooms) {
+    navRooms.addEventListener("click", function(e) {
+        e.preventDefault();
+        switchView('rooms');
+    });
+}
+
+if (navFaculty) {
+    navFaculty.addEventListener("click", function(e) {
+        e.preventDefault();
+        switchView('faculty');
+        renderFacultyTable();
+    });
+}
 
 // ===============================
 // Import Button
@@ -1606,19 +1854,205 @@ function setupDropTargets() {
 }
 
 // ===============================
+// Room Management
+// ===============================
+
+function renderRoomsTable() {
+    const query = roomSearchInput.value.trim().toLowerCase();
+
+    const filtered = rooms.filter(r =>
+        r.name.toLowerCase().includes(query) ||
+        (r.capacity && r.capacity.toString().toLowerCase().includes(query))
+    );
+
+    if (rooms.length === 0) {
+        roomsTableBody.innerHTML = `
+            <tr id="roomsEmptyState">
+                <td colspan="3" class="text-muted py-4">
+                    No rooms added yet. Add your first room above.
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    roomsTableBody.innerHTML = "";
+
+    filtered.forEach((r, index) => {
+        roomsTableBody.innerHTML += `
+            <tr>
+                <td>${escapeHtml(r.name)}</td>
+                <td>${escapeHtml(r.capacity || '-')}</td>
+                <td>
+                    <button class="btn btn-warning btn-sm action-btn" onclick="editRoom(${index})" title="Edit this room">
+                        <i data-lucide="pencil" style="width:14px;height:14px;"></i>
+                    </button>
+                    <button class="btn btn-danger btn-sm action-btn" onclick="deleteRoom(${index})" title="Delete this room">
+                        <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+
+    lucide.createIcons();
+}
+
+if (roomForm) {
+    roomForm.addEventListener("submit", function(e) {
+        e.preventDefault();
+
+        const name = roomName.value.trim();
+        const capacity = roomCapacity.value;
+
+        if (!name) {
+            showToast("Room name is required.", "error");
+            return;
+        }
+
+        const existingIndex = rooms.findIndex(r => r.name === name);
+        if (existingIndex !== -1 && existingIndex !== Number(editRoomIndex.value)) {
+            showToast(`Room "${name}" already exists.`, "error");
+            return;
+        }
+
+        const roomData = {
+            name,
+            capacity
+        };
+
+        if (editRoomIndex.value === "") {
+            rooms.push(roomData);
+            showToast(`Room "${name}" has been added.`, "success");
+        } else {
+            rooms[editRoomIndex.value] = roomData;
+            editRoomIndex.value = "";
+            roomBtnText.textContent = "Add Room";
+            showToast(`Room updated successfully.`, "info");
+        }
+
+        saveRooms();
+        roomForm.reset();
+        renderRoomsTable();
+        updateRoomDropdown();
+        updateSummary();
+    });
+}
+
+if (roomSearchInput) {
+    roomSearchInput.addEventListener("input", renderRoomsTable);
+}
+
+if (cancelRoomBtn) {
+    cancelRoomBtn.addEventListener("click", function() {
+        roomForm.reset();
+        editRoomIndex.value = "";
+        roomBtnText.textContent = "Add Room";
+    });
+}
+
+function editRoom(index) {
+    const r = rooms[index];
+    roomName.value = r.name;
+    roomCapacity.value = r.capacity;
+    editRoomIndex.value = index;
+    roomBtnText.textContent = "Update Room";
+    roomForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function deleteRoom(index) {
+    const deleted = rooms[index];
+    rooms.splice(index, 1);
+
+    saveRooms();
+    renderRoomsTable();
+    updateRoomDropdown();
+    updateSummary();
+
+    showToast(`Room "${deleted.name}" has been removed.`, "info");
+}
+
+// ===============================
+// Faculty List
+// ===============================
+
+function renderFacultyTable() {
+    const query = facultySearchInput.value.trim().toLowerCase();
+
+    const facultyStats = {};
+    loads.forEach(load => {
+        if (!facultyStats[load.faculty]) {
+            facultyStats[load.faculty] = {
+                faculty: load.faculty,
+                totalLoads: 0,
+                totalUnits: 0,
+                sections: new Set(),
+                subjects: new Set()
+            };
+        }
+        facultyStats[load.faculty].totalLoads++;
+        facultyStats[load.faculty].totalUnits += parseInt(load.units) || 0;
+        facultyStats[load.faculty].sections.add(load.section);
+        facultyStats[load.faculty].subjects.add(load.subject);
+    });
+
+    const facultyList = Object.values(facultyStats).filter(f =>
+        f.faculty.toLowerCase().includes(query) ||
+        f.sections.has(query) ||
+        f.subjects.has(query)
+    );
+
+    if (Object.keys(facultyStats).length === 0) {
+        facultyTableBody.innerHTML = `
+            <tr id="facultyEmptyState">
+                <td colspan="5" class="text-muted py-4">
+                    No faculty found. Add loads in Faculty Loading to populate this list.
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    facultyTableBody.innerHTML = "";
+
+    facultyList.forEach(f => {
+        facultyTableBody.innerHTML += `
+            <tr>
+                <td>${escapeHtml(f.faculty)}</td>
+                <td>${f.totalLoads}</td>
+                <td>${f.totalUnits}</td>
+                <td>${Array.from(f.sections).map(s => escapeHtml(s)).join(', ')}</td>
+                <td>${Array.from(f.subjects).map(s => escapeHtml(s)).join(', ')}</td>
+            </tr>
+        `;
+    });
+
+    lucide.createIcons();
+}
+
+if (facultySearchInput) {
+    facultySearchInput.addEventListener("input", renderFacultyTable);
+}
+
+// ===============================
 // Initialize Lucide + App
 // ===============================
 
 loadSavedLoads();
 loadSavedSections();
 loadSavedSubjects();
+loadSavedRooms();
 lucide.createIcons();
 setupDropTargets();
 renderTable();
 renderSectionsTable();
 renderSubjectsTable();
+renderRoomsTable();
 updateSummary();
 updateDatalists();
+// Extract sections from existing loads on initialization
+extractSectionsFromLoads();
+renderSectionButtons();
 
 // ===============================
 // User Manual Modal
@@ -1629,4 +2063,86 @@ if (manualModal) {
     manualModal.addEventListener('shown.bs.modal', function () {
         lucide.createIcons({ scope: this });
     });
+}
+
+// ===============================
+// Section Schedule Modal Export Button
+// ===============================
+
+const exportSectionScheduleBtn = document.getElementById("exportSectionSchedule");
+if (exportSectionScheduleBtn) {
+    exportSectionScheduleBtn.addEventListener("click", function() {
+        exportSectionSchedule(currentSectionFullName);
+    });
+}
+
+// ===============================
+// Export Section Schedule to CSV
+// ===============================
+
+function exportSectionSchedule(sectionFullName) {
+    const sectionLoads = loads.filter(l => l.section === sectionFullName);
+    
+    if (sectionLoads.length === 0) {
+        showToast("No loads to export for this section.", "info");
+        return;
+    }
+
+    // Time slots from 7:00 AM to 11:00 PM
+    const timeSlots = [
+        "7:00–8:00 AM", "8:00–9:00 AM", "9:00–10:00 AM", "10:00–11:00 AM",
+        "11:00–12:00 PM", "12:00–1:00 PM", "1:00–2:00 PM", "2:00–3:00 PM",
+        "3:00–4:00 PM", "4:00–5:00 PM", "5:00–6:00 PM", "6:00–7:00 PM",
+        "7:00–8:00 PM", "8:00–9:00 PM", "9:00–10:00 PM", "10:00–11:00 PM"
+    ];
+
+    const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+    // Build CSV in table format with multi-line cells
+    let csv = "TIME,MONDAY,TUESDAY,WEDNESDAY,THURSDAY,FRIDAY,SATURDAY\n";
+
+    timeSlots.forEach((timeSlot, timeIndex) => {
+        const row = [timeSlot];
+        
+        days.forEach(day => {
+            // Find loads for this time slot and day
+            const cellLoads = sectionLoads.filter(l => {
+                const startHour = parseInt(l.startTime.split(':')[0]);
+                const endHour = parseInt(l.endTime.split(':')[0]);
+                const slotStartHour = timeIndex + 7;
+                const slotEndHour = timeIndex + 8;
+
+                return l.day === day && 
+                       ((startHour < slotEndHour && endHour > slotStartHour) ||
+                        (startHour <= slotStartHour && endHour >= slotEndHour));
+            });
+
+            if (cellLoads.length > 0) {
+                const load = cellLoads[0];
+                // Format with multi-line: Subject, Faculty, Time, Room on separate lines
+                let cellContent = load.subject + "\n" + load.faculty + "\n" + load.startTime + "-" + load.endTime;
+                if (load.room) {
+                    cellContent += "\n" + load.room;
+                }
+                row.push(cellContent);
+            } else {
+                row.push("");
+            }
+        });
+
+        csv += row.map(cell => `"${cell}"`).join(",") + "\n";
+    });
+
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = `${sectionFullName.replace(/\s+/g, '_')}_Schedule.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+
+    showToast(`Exported schedule for "${sectionFullName}".`, "success");
 }

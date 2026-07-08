@@ -680,6 +680,32 @@ body {
     white-space: nowrap;
 }
 
+.badge-room {
+    background-color: #e0f2f1;
+    color: #00695c;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+.badge-units {
+    background-color: #fff8e1;
+    color: #ff8f00;
+    padding: 3px 8px;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
 /* ===========================================
    Drag & Drop (Row → Form Field)
    =========================================== */
@@ -974,7 +1000,9 @@ body {
     .badge-section,
     .badge-subject,
     .badge-day,
-    .badge-time {
+    .badge-time,
+    .badge-room,
+    .badge-units {
         font-size: 0.68rem;
         padding: 2px 7px;
     }
@@ -1153,4 +1181,148 @@ body {
 
 .step-list li strong {
     color: var(--text-primary);
+}
+
+/* ===========================================
+   Section Buttons Container
+   =========================================== */
+
+.section-buttons-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: var(--gap-md);
+    padding: var(--gap-md) 0;
+}
+
+.section-button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--gap-sm);
+    padding: var(--gap-md);
+    background: linear-gradient(135deg, #2e7d32, #4caf50);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+    transition: var(--transition);
+    box-shadow: var(--shadow-sm);
+}
+
+.section-button:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+    opacity: 0.95;
+}
+
+.section-button .section-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.section-button .section-details {
+    font-size: 0.75rem;
+    opacity: 0.9;
+}
+
+.section-button .section-load-count {
+    font-size: 0.7rem;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 2px 8px;
+    border-radius: 12px;
+}
+
+#sectionButtonsEmpty {
+    grid-column: 1 / -1;
+}
+
+/* ===========================================
+   Section Schedule Modal Table
+   =========================================== */
+
+#sectionScheduleTable {
+    table-layout: auto;
+    width: 100%;
+}
+
+#sectionScheduleTable th {
+    background: #2e7d32;
+    color: white;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 10px 6px;
+    border: 1px solid #e0e3e8;
+    width: auto;
+}
+
+#sectionScheduleTable td {
+    padding: 8px 6px;
+    font-size: 0.75rem;
+    border: 1px solid #e0e3e8;
+    vertical-align: middle;
+    height: 60px;
+    width: auto;
+}
+
+#sectionScheduleTable td.time-slot {
+    background: #f8f9fa;
+    font-weight: 500;
+    color: #1a237e;
+    font-size: 0.7rem;
+    width: 110px;
+    white-space: nowrap;
+}
+
+#sectionScheduleTable td.schedule-cell {
+    background: #e8f5e9;
+}
+
+#sectionScheduleTable td.schedule-cell .schedule-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    text-align: center;
+}
+
+#sectionScheduleTable td.schedule-cell .schedule-subject {
+    font-weight: 600;
+    color: #1a237e;
+    font-size: 0.75rem;
+}
+
+#sectionScheduleTable td.schedule-cell .schedule-faculty {
+    color: #2e7d32;
+    font-size: 0.68rem;
+}
+
+#sectionScheduleTable td.schedule-cell .schedule-time {
+    color: #6c757d;
+    font-size: 0.65rem;
+}
+
+#sectionScheduleTable td.schedule-cell .schedule-room {
+    color: #00695c;
+    font-size: 0.62rem;
+}
+
+#sectionScheduleTable td.empty-cell {
+    background: #ffffff;
+}
+
+#sectionScheduleTable tbody tr:nth-of-type(even) td.time-slot {
+    background: #f1f3f4;
+}
+
+#sectionScheduleTable tbody tr:nth-of-type(even) td.schedule-cell {
+    background: #e0f0e0;
+}
+
+#sectionScheduleTable tbody tr:nth-of-type(even) td.empty-cell {
+    background: #f8f9fa;
 }

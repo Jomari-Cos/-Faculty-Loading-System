@@ -41,14 +41,22 @@
                 <i data-lucide="users" style="width:18px;height:18px;"></i>
                 <span>Section Management</span>
             </a>
-            <a href="#" class="nav-item" data-view="subjects" id="navSubjects">
-                <i data-lucide="book-open" style="width:18px;height:18px;"></i>
-                <span>Subject Management</span>
-            </a>
-            <a href="#" class="nav-item" data-view="loading" id="navLoading">
-                <i data-lucide="clipboard-list" style="width:18px;height:18px;"></i>
-                <span>Faculty Loading</span>
-            </a>
+        <a href="#" class="nav-item" data-view="subjects" id="navSubjects">
+            <i data-lucide="book-open" style="width:18px;height:18px;"></i>
+            <span>Subject Management</span>
+        </a>
+        <a href="#" class="nav-item" data-view="rooms" id="navRooms">
+            <i data-lucide="building-2" style="width:18px;height:18px;"></i>
+            <span>Room Management</span>
+        </a>
+        <a href="#" class="nav-item" data-view="faculty" id="navFaculty">
+            <i data-lucide="badge-check" style="width:18px;height:18px;"></i>
+            <span>Faculty List</span>
+        </a>
+        <a href="#" class="nav-item" data-view="loading" id="navLoading">
+            <i data-lucide="clipboard-list" style="width:18px;height:18px;"></i>
+            <span>Faculty Loading</span>
+        </a>
         </div>
 
         <div class="sidebar-footer">
@@ -133,101 +141,56 @@
 
             </div>
 
-            <!-- Quick Actions -->
-            <div class="quick-actions">
-                <button class="btn btn-lg text-white" id="addLoadHeaderBtn"
-                        style="background:linear-gradient(135deg,#1a237e,#283593);"
-                        title="Open the form to add a new faculty load entry">
-                    <i data-lucide="plus-circle" style="width:22px;height:22px;"></i>
-                    Add Faculty Load
-                </button>
-                <button class="btn btn-lg text-white" id="manageSectionsBtn"
-                        style="background:linear-gradient(135deg,#2e7d32,#4caf50);"
-                        title="Manage sections">
-                    <i data-lucide="users" style="width:22px;height:22px;"></i>
-                    Manage Sections
-                </button>
-                <button class="btn btn-lg text-white" id="manageSubjectsBtn"
-                        style="background:linear-gradient(135deg,#6a1b9a,#9c27b0);"
-                        title="Manage subjects">
-                    <i data-lucide="book-open" style="width:22px;height:22px;"></i>
-                    Manage Subjects
-                </button>
-            </div>
+             <!-- Quick Actions -->
+             <div class="quick-actions">
+                 <button class="btn btn-lg text-white" id="addLoadHeaderBtn"
+                         style="background:linear-gradient(135deg,#1a237e,#283593);"
+                         title="Open the form to add a new faculty load entry">
+                     <i data-lucide="plus-circle" style="width:22px;height:22px;"></i>
+                     Add Faculty Load
+                 </button>
+                 <button class="btn btn-lg text-white" id="manageSectionsBtn"
+                         style="background:linear-gradient(135deg,#2e7d32,#4caf50);"
+                         title="Manage sections">
+                     <i data-lucide="users" style="width:22px;height:22px;"></i>
+                     Manage Sections
+                 </button>
+                 <button class="btn btn-lg text-white" id="manageSubjectsBtn"
+                         style="background:linear-gradient(135deg,#6a1b9a,#9c27b0);"
+                         title="Manage subjects">
+                     <i data-lucide="book-open" style="width:22px;height:22px;"></i>
+                     Manage Subjects
+                 </button>
+                 <button class="btn btn-lg text-white" id="manageRoomsBtn"
+                         style="background:linear-gradient(135deg,#00695c,#00897b);"
+                         title="Manage rooms">
+                     <i data-lucide="building-2" style="width:22px;height:22px;"></i>
+                     Manage Rooms
+                 </button>
+             </div>
 
-            <!-- Recent Faculty Loading Table -->
-            <div class="card shadow-sm border-0 rounded-4" id="tableCard">
-
-                <div class="table-header-row">
-                    <span class="table-title">
-                        <i data-lucide="table" style="width:16px;height:16px;"></i>
-                        Recent Faculty Loading
-                    </span>
-                    <span class="badge bg-secondary text-white small" id="recordCount">0 entries</span>
-                </div>
-
-                <div class="table-responsive rounded-bottom-4">
-
-                    <table class="table align-middle text-center mb-0"
-                           id="mainTable"
-                           role="grid"
-                           aria-label="Faculty loading schedule records">
-
-                        <thead>
-                            <tr>
-                                <th class="sortable" data-sort="faculty" scope="col" title="Click to sort">
-                                    Faculty
-                                    <span class="sort-indicator" aria-hidden="true">
-                                        <i data-lucide="chevron-up" style="width:10px;height:10px;"></i>
-                                        <i data-lucide="chevron-down" style="width:10px;height:10px;"></i>
-                                    </span>
-                                </th>
-                                <th class="sortable" data-sort="section" scope="col" title="Click to sort">
-                                    Section
-                                    <span class="sort-indicator" aria-hidden="true">
-                                        <i data-lucide="chevron-up" style="width:10px;height:10px;"></i>
-                                        <i data-lucide="chevron-down" style="width:10px;height:10px;"></i>
-                                    </span>
-                                </th>
-                                <th class="sortable" data-sort="subject" scope="col" title="Click to sort">
-                                    Subject
-                                    <span class="sort-indicator" aria-hidden="true">
-                                        <i data-lucide="chevron-up" style="width:10px;height:10px;"></i>
-                                        <i data-lucide="chevron-down" style="width:10px;height:10px;"></i>
-                                    </span>
-                                </th>
-                                <th scope="col">Day</th>
-                                <th scope="col">Start</th>
-                                <th scope="col">End</th>
-                                <th scope="col" width="120">Actions</th>
-                            </tr>
-                        </thead>
-
-                        <tbody id="loadingTable">
-                            <!-- Empty State -->
-                            <tr id="emptyState">
-                                <td colspan="7">
-                                    <div class="empty-state-content">
-                                        <img src="images/empty_state.png" alt="Empty state illustration" class="empty-state-image" />
-                                        <h4 class="text-muted">No faculty loads yet</h4>
-                                        <p class="text-muted small mb-1">
-                                            Add your first faculty load or import data from a CSV/Excel file.
-                                        </p>
-                                        <p class="text-muted small mb-0">
-                                            Required fields: Faculty, Section, Subject, Day, Start Time, End Time.
-                                        </p>
-                                    </div>
-                                </td>
-                            </tr>
-
-                        </tbody>
-
-                    </table>
-
-                </div>
-
-            </div>
-        </div>
+             <!-- Section Buttons Container -->
+             <div class="card shadow-sm border-0 rounded-4" id="sectionButtonsCard">
+                 <div class="table-header-row">
+                     <span class="table-title">
+                         <i data-lucide="users" style="width:16px;height:16px;"></i>
+                         Sections
+                     </span>
+                     <span class="badge bg-secondary text-white small" id="sectionCount">0 sections</span>
+                 </div>
+                 <div class="card-body">
+                     <div class="section-buttons-container" id="sectionButtonsContainer">
+                         <div class="empty-state-content" id="sectionButtonsEmpty">
+                             <img src="images/empty_state.png" alt="Empty state illustration" class="empty-state-image" />
+                             <h4 class="text-muted">No sections added yet</h4>
+                             <p class="text-muted small mb-1">
+                                 Add sections in Section Management to see them here.
+                             </p>
+                         </div>
+                     </div>
+                 </div>
+             </div>
+         </div>
 
         <!-- ========================= -->
         <!-- Section Management View -->
@@ -392,6 +355,14 @@
                                 </div>
                             </div>
 
+                            <!-- Apply to all sections of same year option -->
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="applyToAllYearSections">
+                                <label class="form-check-label" for="applyToAllYearSections">
+                                    Apply to all sections of the same year level
+                                </label>
+                            </div>
+
                             <div class="form-actions">
                                 <button type="submit" class="btn btn-lg text-white"
                                         id="addSubjectBtn"
@@ -433,6 +404,154 @@
                                 <tr id="subjectsEmptyState">
                                     <td colspan="3" class="text-muted py-4">
                                         No subjects added yet. Add your first subject above.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================= -->
+        <!-- Room Management View -->
+        <!-- ========================= -->
+
+        <div class="view-container d-none" id="roomsView">
+
+            <div class="card shadow-sm border-0 rounded-4">
+
+                <div class="card-header text-white rounded-top-4 d-flex align-items-center gap-2"
+                     style="background:linear-gradient(135deg,#00695c,#00897b);">
+                    <i data-lucide="building-2" style="width:18px;height:18px;"></i>
+                    Room Management
+                </div>
+
+                <div class="card-body">
+
+                    <!-- Room Form -->
+                    <form id="roomForm" class="mb-4">
+                        <input type="hidden" id="editRoomIndex">
+
+                        <div class="form-fields">
+                            <div class="form-row-custom">
+                                <div class="form-group">
+                                    <label class="form-label fw-semibold" for="roomName">
+                                        <i data-lucide="building-2" style="width:16px;height:16px;"></i>
+                                        Room Name
+                                    </label>
+                                    <input type="text" class="form-control" id="roomName"
+                                           required placeholder="e.g. Room 101, Lab A"
+                                           aria-label="Room name">
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label fw-semibold" for="roomCapacity">
+                                        <i data-lucide="users" style="width:16px;height:16px;"></i>
+                                        Capacity
+                                    </label>
+                                    <input type="number" class="form-control" id="roomCapacity"
+                                           min="1" max="200" placeholder="e.g. 30"
+                                           aria-label="Room capacity">
+                                </div>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-lg text-white"
+                                        id="addRoomBtn"
+                                        style="background:linear-gradient(135deg,#00695c,#00897b);">
+                                    <i data-lucide="plus-circle" style="width:20px;height:20px;"></i>
+                                    <span id="roomBtnText">Add Room</span>
+                                </button>
+                                <button type="button" class="btn btn-lg btn-outline-secondary"
+                                        id="cancelRoomBtn">
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- Search -->
+                    <div class="search-bar mb-3">
+                        <div class="search-input-group">
+                            <i data-lucide="search" style="width:16px;height:16px;color:#6c757d;flex-shrink:0;"></i>
+                            <input type="text" class="search-input" id="roomSearchInput"
+                                   placeholder="Search rooms..." aria-label="Search rooms">
+                        </div>
+                    </div>
+
+                    <!-- Rooms Table -->
+                    <div class="table-responsive rounded-4">
+                        <table class="table align-middle text-center mb-0"
+                               id="roomsTable"
+                               role="grid"
+                               aria-label="Rooms table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Room</th>
+                                    <th scope="col">Capacity</th>
+                                    <th scope="col" width="120">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="roomsTableBody">
+                                <tr id="roomsEmptyState">
+                                    <td colspan="3" class="text-muted py-4">
+                                        No rooms added yet. Add your first room above.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================= -->
+        <!-- Faculty List View -->
+        <!-- ========================= -->
+
+        <div class="view-container d-none" id="facultyView">
+
+            <div class="card shadow-sm border-0 rounded-4">
+
+                <div class="card-header text-white rounded-top-4 d-flex align-items-center gap-2"
+                     style="background:linear-gradient(135deg,#1a237e,#283593);">
+                    <i data-lucide="badge-check" style="width:18px;height:18px;"></i>
+                    Faculty List
+                </div>
+
+                <div class="card-body">
+
+                    <!-- Search -->
+                    <div class="search-bar mb-3">
+                        <div class="search-input-group">
+                            <i data-lucide="search" style="width:16px;height:16px;color:#6c757d;flex-shrink:0;"></i>
+                            <input type="text" class="search-input" id="facultySearchInput"
+                                   placeholder="Search faculty..." aria-label="Search faculty">
+                        </div>
+                    </div>
+
+                    <!-- Faculty Table -->
+                    <div class="table-responsive rounded-4">
+                        <table class="table align-middle text-center mb-0"
+                               id="facultyTable"
+                               role="grid"
+                               aria-label="Faculty table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Faculty</th>
+                                    <th scope="col">Total Loads</th>
+                                    <th scope="col">Total Units</th>
+                                    <th scope="col">Sections</th>
+                                    <th scope="col">Subjects</th>
+                                </tr>
+                            </thead>
+                            <tbody id="facultyTableBody">
+                                <tr id="facultyEmptyState">
+                                    <td colspan="5" class="text-muted py-4">
+                                        No faculty found. Add loads in Faculty Loading to populate this list.
                                     </td>
                                 </tr>
                             </tbody>
@@ -558,6 +677,28 @@
                                     </label>
                                     <div class="drop-field" data-field="endTime">
                                         <input type="time" class="form-control drop-target" id="endTime" required aria-label="Class end time">
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label fw-semibold" for="room">
+                                        <i data-lucide="building-2" style="width:16px;height:16px;"></i>
+                                        Room
+                                    </label>
+                                    <div class="drop-field" data-field="room">
+                                        <select class="form-select drop-target" id="room" aria-label="Room">
+                                            <option value="">Select Room</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label fw-semibold" for="units">
+                                        <i data-lucide="hash" style="width:16px;height:16px;"></i>
+                                        Units
+                                    </label>
+                                    <div class="drop-field" data-field="units">
+                                        <input type="number" class="form-control drop-target" id="units" min="1" max="5" placeholder="e.g. 3" aria-label="Units">
                                     </div>
                                 </div>
 
@@ -692,6 +833,8 @@
                                 <th scope="col">Day</th>
                                 <th scope="col">Start</th>
                                 <th scope="col">End</th>
+                                <th scope="col">Room</th>
+                                <th scope="col">Units</th>
                                 <th scope="col" width="120">Actions</th>
                             </tr>
                         </thead>
@@ -700,7 +843,7 @@
 
                             <!-- Empty State -->
                             <tr id="emptyStateFull">
-                                <td colspan="7">
+                                <td colspan="9">
                                     <div class="empty-state-content">
                                         <img src="images/empty_state.png" alt="Empty state illustration" class="empty-state-image" />
                                         <h4 class="text-muted">No faculty loads yet</h4>
@@ -916,6 +1059,51 @@
     </div>
 </div>
 
+<!-- ========================= -->
+<!-- Section Schedule Modal -->
+<!-- ========================= -->
+
+<div class="modal fade" id="sectionScheduleModal" tabindex="-1" aria-labelledby="sectionScheduleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 rounded-4">
+            <div class="modal-header text-white" style="background:linear-gradient(135deg,#2e7d32,#4caf50);border-radius:16px 16px 0 0;">
+                <h5 class="modal-title" id="sectionScheduleModalLabel">
+                    <i data-lucide="calendar" style="width:20px;height:20px;"></i>
+                    <span id="sectionScheduleTitle">Section Schedule</span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="table-responsive">
+                    <table class="table align-middle text-center mb-0" id="sectionScheduleTable">
+                        <thead>
+                            <tr>
+                                <th scope="col" style="width: 130px;">TIME</th>
+                                <th scope="col">MONDAY</th>
+                                <th scope="col">TUESDAY</th>
+                                <th scope="col">WEDNESDAY</th>
+                                <th scope="col">THURSDAY</th>
+                                <th scope="col">FRIDAY</th>
+                                <th scope="col">SATURDAY</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sectionScheduleTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+<div class="modal-footer border-0" style="background:#f8f9fa;border-radius:0 0 16px 16px;">
+                <button type="button" class="btn btn-secondary px-4 rounded-pill" data-bs-dismiss="modal">
+                    <i data-lucide="x-circle" style="width:16px;height:16px;"></i> Close
+                </button>
+                <button type="button" class="btn text-white px-4 rounded-pill" id="exportSectionSchedule" style="background:#2e7d32;">
+                    <i data-lucide="download" style="width:16px;height:16px;"></i> Export CSV
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- SheetJS for Excel parsing -->
 <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js">
 </script>
@@ -927,3 +1115,4 @@
 <script src="script.js"></script>
 
 </body>
+</html>
