@@ -2,8 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>Faculty Loading System</title>
 
@@ -24,368 +23,704 @@
 <div class="app-layout">
 
     <!-- ========================= -->
-    <!-- Header -->
+    <!-- Sidebar Navigation -->
     <!-- ========================= -->
 
-    <header class="app-header">
-        <h1 style="color:#1a237e;">
-            <i data-lucide="graduation-cap" style="width:32px;height:32px;"></i>
-            Faculty Loading System
-        </h1>
-    </header>
-
-    <!-- ========================= -->
-    <!-- Stats Row — 4 cards side by side -->
-    <!-- ========================= -->
-
-    <div class="stats-row">
-
-        <div class="stat-card" title="Total number of scheduled class loads">
-            <div class="stat-icon" style="color:#1a237e;">
-                <i data-lucide="clipboard-list" style="width:26px;height:26px;"></i>
-            </div>
-            <div class="stat-info">
-                <span class="stat-label">Loads</span>
-                <span class="stat-value" style="color:#1a237e;" id="totalLoads">0</span>
-            </div>
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <i data-lucide="graduation-cap" style="width:28px;height:28px;"></i>
+            <span class="sidebar-title">Faculty Loading</span>
         </div>
 
-        <div class="stat-card" title="Unique faculty members assigned">
-            <div class="stat-icon" style="color:#2e7d32;">
-                <i data-lucide="badge-check" style="width:26px;height:26px;"></i>
-            </div>
-            <div class="stat-info">
-                <span class="stat-label">Faculty</span>
-                <span class="stat-value" style="color:#2e7d32;" id="totalFaculty">0</span>
-            </div>
+        <div class="sidebar-nav">
+            <a href="#" class="nav-item active" data-view="dashboard" id="navDashboard">
+                <i data-lucide="home" style="width:18px;height:18px;"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="#" class="nav-item" data-view="sections" id="navSections">
+                <i data-lucide="users" style="width:18px;height:18px;"></i>
+                <span>Section Management</span>
+            </a>
+            <a href="#" class="nav-item" data-view="subjects" id="navSubjects">
+                <i data-lucide="book-open" style="width:18px;height:18px;"></i>
+                <span>Subject Management</span>
+            </a>
+            <a href="#" class="nav-item" data-view="loading" id="navLoading">
+                <i data-lucide="clipboard-list" style="width:18px;height:18px;"></i>
+                <span>Faculty Loading</span>
+            </a>
         </div>
 
-        <div class="stat-card" title="Unique sections scheduled">
-            <div class="stat-icon" style="color:#e65100;">
-                <i data-lucide="users" style="width:26px;height:26px;"></i>
-            </div>
-            <div class="stat-info">
-                <span class="stat-label">Section</span>
-                <span class="stat-value" style="color:#e65100;" id="totalSections">0</span>
-            </div>
+        <div class="sidebar-footer">
+            <a href="#" class="nav-item" id="navManual" data-bs-toggle="modal" data-bs-target="#manualModal">
+                <i data-lucide="book" style="width:18px;height:18px;"></i>
+                <span>User Manual</span>
+            </a>
+            <button class="btn btn-sm text-white w-100" style="background:#c62828;" data-bs-toggle="modal" data-bs-target="#resetModal" title="Start a new semester">
+                <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
+                Reset Semester
+            </button>
         </div>
+    </nav>
 
-        <div class="stat-card" title="Unique subjects offered">
-            <div class="stat-icon" style="color:#6a1b9a;">
-                <i data-lucide="book-open" style="width:26px;height:26px;"></i>
+    <!-- ========================= -->
+    <!-- Main Content -->
+    <!-- ========================= -->
+
+    <div class="main-content">
+
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-top">
+                <button class="btn btn-sm d-md-none" id="sidebarToggle" style="color:#1a237e;">
+                    <i data-lucide="menu" style="width:20px;height:20px;"></i>
+                </button>
+                <h1 style="color:#1a237e;">
+                    <i data-lucide="graduation-cap" style="width:32px;height:32px;"></i>
+                    Faculty Loading System
+                </h1>
             </div>
-            <div class="stat-info">
-                <span class="stat-label">Subject</span>
-                <span class="stat-value" style="color:#6a1b9a;" id="totalSubjects">0</span>
-            </div>
-        </div>
+        </header>
 
-    </div>
+        <!-- ========================= -->
+        <!-- Dashboard View -->
+        <!-- ========================= -->
 
-    <!-- ========================= -->
-    <!-- + Add Faculty Load Button -->
-    <!-- ========================= -->
+        <div class="view-container" id="dashboardView">
 
-    <button
-        type="button"
-        class="btn btn-lg text-white add-load-btn"
-        id="addLoadHeaderBtn"
-        style="background:linear-gradient(135deg,#1a237e,#283593);"
-        title="Open the form to add a new faculty load entry">
-        <i data-lucide="plus-circle" style="width:22px;height:22px;"></i>
-        Add Faculty Load
-    </button>
+            <!-- Stats Row — 4 cards side by side -->
+            <div class="stats-row">
 
-    <!-- ========================= -->
-    <!-- Faculty Loading Form (hidden by default) -->
-    <!-- ========================= -->
-
-    <div class="card shadow-sm border-0 rounded-4" id="formCard">
-
-        <div class="card-header text-white rounded-top-4 d-flex align-items-center gap-2" style="background:linear-gradient(135deg,#1a237e,#283593);">
-            <i data-lucide="plus-circle" style="width:18px;height:18px;"></i>
-            Faculty Form
-            <span class="ms-auto badge bg-light text-dark small px-3 py-1" title="Press Ctrl + Enter to submit">
-                <i data-lucide="keyboard" style="width:12px;height:12px;"></i>
-                Ctrl + Enter
-            </span>
-            <button type="button" class="btn-close btn-close-white ms-2" id="closeFormBtn" aria-label="Close form"></button>
-        </div>
-
-        <div class="card-body">
-
-            <form id="loadForm" novalidate>
-
-                <input type="hidden" id="editIndex">
-
-                <div class="form-fields">
-
-                    <div class="form-row-custom">
-                        <div class="form-group">
-                            <label class="form-label fw-semibold" for="faculty">
-                                <i data-lucide="badge-check" style="width:16px;height:16px;"></i>
-                                Faculty
-                            </label>
-                            <div class="drop-field" data-field="faculty">
-                                <input
-                                    type="text"
-                                    class="form-control drop-target"
-                                    id="faculty"
-                                    list="facultyList"
-                                    required
-                                    autocomplete="off"
-                                    placeholder="e.g. Dr. Cruz, Prof. Santos"
-                                    aria-label="Faculty name">
-                                <datalist id="facultyList"></datalist>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label fw-semibold" for="section">
-                                <i data-lucide="users" style="width:16px;height:16px;"></i>
-                                Section
-                            </label>
-                            <div class="drop-field" data-field="section">
-                                <input
-                                    type="text"
-                                    class="form-control drop-target"
-                                    id="section"
-                                    list="sectionList"
-                                    required
-                                    autocomplete="off"
-                                    placeholder="e.g. BSIT-3A, BSCS-2B"
-                                    aria-label="Section name">
-                                <datalist id="sectionList"></datalist>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label fw-semibold" for="subject">
-                                <i data-lucide="book-open" style="width:16px;height:16px;"></i>
-                                Subject
-                            </label>
-                            <div class="drop-field" data-field="subject">
-                                <input
-                                    type="text"
-                                    class="form-control drop-target"
-                                    id="subject"
-                                    list="subjectList"
-                                    required
-                                    autocomplete="off"
-                                    placeholder="e.g. MATH101, CS301"
-                                    aria-label="Subject name or code">
-                                <datalist id="subjectList"></datalist>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label fw-semibold" for="day">
-                                <i data-lucide="calendar" style="width:16px;height:16px;"></i>
-                                Day
-                            </label>
-                            <div class="drop-field" data-field="day">
-                                <select class="form-select drop-target" id="day" required aria-label="Day of the week">
-                                    <option value="">Select Day</option>
-                                    <option>Monday</option>
-                                    <option>Tuesday</option>
-                                    <option>Wednesday</option>
-                                    <option>Thursday</option>
-                                    <option>Friday</option>
-                                    <option>Saturday</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label fw-semibold" for="startTime">
-                                <i data-lucide="clock" style="width:16px;height:16px;"></i>
-                                Start Time
-                            </label>
-                            <div class="drop-field" data-field="startTime">
-                                <input type="time" class="form-control drop-target" id="startTime" required aria-label="Class start time">
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label fw-semibold" for="endTime">
-                                <i data-lucide="clock" style="width:16px;height:16px;"></i>
-                                End Time
-                            </label>
-                            <div class="drop-field" data-field="endTime">
-                                <input type="time" class="form-control drop-target" id="endTime" required aria-label="Class end time">
-                            </div>
-                        </div>
-
+                <div class="stat-card" title="Total number of scheduled class loads">
+                    <div class="stat-icon" style="color:#1a237e;">
+                        <i data-lucide="clipboard-list" style="width:26px;height:26px;"></i>
                     </div>
-
-                    <div class="form-actions">
-                        <button
-                            type="submit"
-                            class="btn btn-lg text-white"
-                            id="submitBtn"
-                            style="background:linear-gradient(135deg,#1a237e,#283593);"
-                            title="Add this schedule entry (Ctrl + Enter)">
-                            <i data-lucide="plus-circle" style="width:20px;height:20px;"></i>
-                            <span id="submitBtnText">Add Load</span>
-                        </button>
-                        <button type="button" class="btn btn-lg btn-outline-secondary" id="cancelFormBtn">
-                            Cancel
-                        </button>
+                    <div class="stat-info">
+                        <span class="stat-label">Loads</span>
+                        <span class="stat-value" style="color:#1a237e;" id="totalLoads">0</span>
                     </div>
-
                 </div>
 
-            </form>
+                <div class="stat-card" title="Unique faculty members assigned">
+                    <div class="stat-icon" style="color:#2e7d32;">
+                        <i data-lucide="badge-check" style="width:26px;height:26px;"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label">Faculty</span>
+                        <span class="stat-value" style="color:#2e7d32;" id="totalFaculty">0</span>
+                    </div>
+                </div>
 
-        </div>
+                <div class="stat-card" title="Unique sections scheduled">
+                    <div class="stat-icon" style="color:#e65100;">
+                        <i data-lucide="users" style="width:26px;height:26px;"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label">Section</span>
+                        <span class="stat-value" style="color:#e65100;" id="totalSections">0</span>
+                    </div>
+                </div>
 
-    </div>
+                <div class="stat-card" title="Unique subjects offered">
+                    <div class="stat-icon" style="color:#6a1b9a;">
+                        <i data-lucide="book-open" style="width:26px;height:26px;"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label">Subject</span>
+                        <span class="stat-value" style="color:#6a1b9a;" id="totalSubjects">0</span>
+                    </div>
+                </div>
 
-    <!-- ========================= -->
-    <!-- Search & Filter Bar -->
-    <!-- ========================= -->
+            </div>
 
-    <div class="search-bar">
-
-        <div class="search-input-group">
-            <i data-lucide="search" style="width:16px;height:16px;color:#6c757d;flex-shrink:0;"></i>
-            <input
-                type="text"
-                class="search-input"
-                id="searchInput"
-                placeholder="Search faculty, section, subject..."
-                aria-label="Search records">
-            <select
-                class="search-category"
-                id="searchCategory"
-                aria-label="Search in category">
-                <option value="all">All</option>
-                <option value="faculty">Faculty</option>
-                <option value="subject">Subject</option>
-                <option value="section">Section</option>
-            </select>
-        </div>
-
-        <div class="search-actions">
-            <select
-                class="day-filter"
-                id="dayFilter"
-                title="Filter by day of the week"
-                aria-label="Filter by day">
-                <option value="all">📅 All Days</option>
-                <option>Monday</option>
-                <option>Tuesday</option>
-                <option>Wednesday</option>
-                <option>Thursday</option>
-                <option>Friday</option>
-                <option>Saturday</option>
-            </select>
-
-            <div class="position-relative">
-                <input type="file" id="importFileInput" accept=".csv,.xlsx,.xls" style="display:none;" aria-label="Upload CSV or Excel file">
-                <button class="btn btn-sm text-white" style="background:#1565c0;" id="importCSVBtn" title="Browse or drag & drop a CSV or Excel file">
-                    <i data-lucide="upload" style="width:14px;height:14px;"></i>
-                    Import
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <button class="btn btn-lg text-white" id="addLoadHeaderBtn"
+                        style="background:linear-gradient(135deg,#1a237e,#283593);"
+                        title="Open the form to add a new faculty load entry">
+                    <i data-lucide="plus-circle" style="width:22px;height:22px;"></i>
+                    Add Faculty Load
+                </button>
+                <button class="btn btn-lg text-white" id="manageSectionsBtn"
+                        style="background:linear-gradient(135deg,#2e7d32,#4caf50);"
+                        title="Manage sections">
+                    <i data-lucide="users" style="width:22px;height:22px;"></i>
+                    Manage Sections
+                </button>
+                <button class="btn btn-lg text-white" id="manageSubjectsBtn"
+                        style="background:linear-gradient(135deg,#6a1b9a,#9c27b0);"
+                        title="Manage subjects">
+                    <i data-lucide="book-open" style="width:22px;height:22px;"></i>
+                    Manage Subjects
                 </button>
             </div>
 
-            <button class="btn btn-sm text-white" style="background:#2e7d32;" id="exportCSV" title="Download all records as CSV">
-                <i data-lucide="download" style="width:14px;height:14px;"></i>
-                Export
-            </button>
+            <!-- Recent Faculty Loading Table -->
+            <div class="card shadow-sm border-0 rounded-4" id="tableCard">
 
-            <button class="btn btn-sm text-white" style="background:#c62828;" data-bs-toggle="modal" data-bs-target="#resetModal" title="Start a new semester">
-                <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
-                Reset
-            </button>
-        </div>
+                <div class="table-header-row">
+                    <span class="table-title">
+                        <i data-lucide="table" style="width:16px;height:16px;"></i>
+                        Recent Faculty Loading
+                    </span>
+                    <span class="badge bg-secondary text-white small" id="recordCount">0 entries</span>
+                </div>
 
-    </div>
+                <div class="table-responsive rounded-bottom-4">
 
-    <!-- ========================= -->
-    <!-- Faculty Loading Table -->
-    <!-- ========================= -->
+                    <table class="table align-middle text-center mb-0"
+                           id="mainTable"
+                           role="grid"
+                           aria-label="Faculty loading schedule records">
 
-    <div class="card shadow-sm border-0 rounded-4" id="tableCard">
+                        <thead>
+                            <tr>
+                                <th class="sortable" data-sort="faculty" scope="col" title="Click to sort">
+                                    Faculty
+                                    <span class="sort-indicator" aria-hidden="true">
+                                        <i data-lucide="chevron-up" style="width:10px;height:10px;"></i>
+                                        <i data-lucide="chevron-down" style="width:10px;height:10px;"></i>
+                                    </span>
+                                </th>
+                                <th class="sortable" data-sort="section" scope="col" title="Click to sort">
+                                    Section
+                                    <span class="sort-indicator" aria-hidden="true">
+                                        <i data-lucide="chevron-up" style="width:10px;height:10px;"></i>
+                                        <i data-lucide="chevron-down" style="width:10px;height:10px;"></i>
+                                    </span>
+                                </th>
+                                <th class="sortable" data-sort="subject" scope="col" title="Click to sort">
+                                    Subject
+                                    <span class="sort-indicator" aria-hidden="true">
+                                        <i data-lucide="chevron-up" style="width:10px;height:10px;"></i>
+                                        <i data-lucide="chevron-down" style="width:10px;height:10px;"></i>
+                                    </span>
+                                </th>
+                                <th scope="col">Day</th>
+                                <th scope="col">Start</th>
+                                <th scope="col">End</th>
+                                <th scope="col" width="120">Actions</th>
+                            </tr>
+                        </thead>
 
-        <!-- File Drop Zone Overlay -->
-        <div class="file-drop-zone" id="fileDropZone">
-            <div class="file-drop-content">
-                <i data-lucide="file-spreadsheet" style="width:48px;height:48px;color:#1565c0;"></i>
-                <h5 class="fw-semibold" style="color:#1565c0;">Drop your file here</h5>
-                <p class="text-muted small">Supports: .csv, .xlsx, .xls</p>
+                        <tbody id="loadingTable">
+                            <!-- Empty State -->
+                            <tr id="emptyState">
+                                <td colspan="7">
+                                    <div class="empty-state-content">
+                                        <img src="images/empty_state.png" alt="Empty state illustration" class="empty-state-image" />
+                                        <h4 class="text-muted">No faculty loads yet</h4>
+                                        <p class="text-muted small mb-1">
+                                            Add your first faculty load or import data from a CSV/Excel file.
+                                        </p>
+                                        <p class="text-muted small mb-0">
+                                            Required fields: Faculty, Section, Subject, Day, Start Time, End Time.
+                                        </p>
+                                    </div>
+                                </td>
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
             </div>
         </div>
 
-        <div class="table-header-row">
-            <span class="table-title">
-                <i data-lucide="table" style="width:16px;height:16px;"></i>
-                Faculty Loading Table
-            </span>
-            
-            <span class="badge bg-secondary text-white small" id="recordCount">0 entries</span>
+        <!-- ========================= -->
+        <!-- Section Management View -->
+        <!-- ========================= -->
+
+        <div class="view-container d-none" id="sectionsView">
+
+            <div class="card shadow-sm border-0 rounded-4">
+
+                <div class="card-header text-white rounded-top-4 d-flex align-items-center gap-2"
+                     style="background:linear-gradient(135deg,#2e7d32,#4caf50);">
+                    <i data-lucide="users" style="width:18px;height:18px;"></i>
+                    Section Management
+                </div>
+
+                <div class="card-body">
+
+                    <!-- Section Form -->
+                    <form id="sectionForm" class="mb-4">
+                        <input type="hidden" id="editSectionIndex">
+
+                        <div class="form-fields">
+                            <div class="form-row-custom">
+                                <div class="form-group">
+                                    <label class="form-label fw-semibold" for="sectionProgram">
+                                        <i data-lucide="book" style="width:16px;height:16px;"></i>
+                                        Program
+                                    </label>
+                                    <input type="text" class="form-control" id="sectionProgram"
+                                           list="programList" required
+                                           placeholder="e.g. BSCpE, BSIT, BSCS"
+                                           aria-label="Program">
+                                    <datalist id="programList">
+                                        <option value="BSCpE">
+                                        <option value="BSIT">
+                                        <option value="BSCS">
+                                        <option value="BSECE">
+                                        <option value="BSIE">
+                                    </datalist>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label fw-semibold" for="sectionYear">
+                                        <i data-lucide="calendar" style="width:16px;height:16px;"></i>
+                                        Year Level
+                                    </label>
+                                    <select class="form-select" id="sectionYear" required aria-label="Year level">
+                                        <option value="">Select Year</option>
+                                        <option>1st Year</option>
+                                        <option>2nd Year</option>
+                                        <option>3rd Year</option>
+                                        <option>4th Year</option>
+                                        <option>5th Year</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label fw-semibold" for="sectionName">
+                                        <i data-lucide="hash" style="width:16px;height:16px;"></i>
+                                        Section Name
+                                    </label>
+                                    <input type="text" class="form-control" id="sectionName"
+                                           required placeholder="e.g. A, B, C"
+                                           aria-label="Section name">
+                                </div>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-lg text-white"
+                                        id="addSectionBtn"
+                                        style="background:linear-gradient(135deg,#2e7d32,#4caf50);">
+                                    <i data-lucide="plus-circle" style="width:20px;height:20px;"></i>
+                                    <span id="sectionBtnText">Add Section</span>
+                                </button>
+                                <button type="button" class="btn btn-lg btn-outline-secondary"
+                                        id="cancelSectionBtn">
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- Search -->
+                    <div class="search-bar mb-3">
+                        <div class="search-input-group">
+                            <i data-lucide="search" style="width:16px;height:16px;color:#6c757d;flex-shrink:0;"></i>
+                            <input type="text" class="search-input" id="sectionSearchInput"
+                                   placeholder="Search sections..." aria-label="Search sections">
+                        </div>
+                    </div>
+
+                    <!-- Sections Table -->
+                    <div class="table-responsive rounded-4">
+                        <table class="table align-middle text-center mb-0"
+                               id="sectionsTable"
+                               role="grid"
+                               aria-label="Sections table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Program</th>
+                                    <th scope="col">Year</th>
+                                    <th scope="col">Section</th>
+                                    <th scope="col" width="120">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sectionsTableBody">
+                                <tr id="sectionsEmptyState">
+                                    <td colspan="4" class="text-muted py-4">
+                                        No sections added yet. Add your first section above.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+            </div>
         </div>
 
-        <div class="table-responsive rounded-bottom-4">
+        <!-- ========================= -->
+        <!-- Subject Management View -->
+        <!-- ========================= -->
 
-            <table
-                class="table align-middle text-center mb-0"
-                id="mainTable"
-                role="grid"
-                aria-label="Faculty loading schedule records">
+        <div class="view-container d-none" id="subjectsView">
 
-                <thead>
-                    <tr>
-                        <th class="sortable" data-sort="faculty" scope="col" title="Click to sort">
-                            Faculty
-                            <span class="sort-indicator" aria-hidden="true">
-                                <i data-lucide="chevron-up" style="width:10px;height:10px;"></i>
-                                <i data-lucide="chevron-down" style="width:10px;height:10px;"></i>
-                            </span>
-                        </th>
-                        <th class="sortable" data-sort="section" scope="col" title="Click to sort">
-                            Section
-                            <span class="sort-indicator" aria-hidden="true">
-                                <i data-lucide="chevron-up" style="width:10px;height:10px;"></i>
-                                <i data-lucide="chevron-down" style="width:10px;height:10px;"></i>
-                            </span>
-                        </th>
-                        <th class="sortable" data-sort="subject" scope="col" title="Click to sort">
-                            Subject
-                            <span class="sort-indicator" aria-hidden="true">
-                                <i data-lucide="chevron-up" style="width:10px;height:10px;"></i>
-                                <i data-lucide="chevron-down" style="width:10px;height:10px;"></i>
-                            </span>
-                        </th>
-                        <th scope="col">Day</th>
-                        <th scope="col">Start</th>
-                        <th scope="col">End</th>
-                        <th scope="col" width="120">Actions</th>
-                    </tr>
-                </thead>
+            <div class="card shadow-sm border-0 rounded-4">
 
-                <tbody id="loadingTable">
+                <div class="card-header text-white rounded-top-4 d-flex align-items-center gap-2"
+                     style="background:linear-gradient(135deg,#6a1b9a,#9c27b0);">
+                    <i data-lucide="book-open" style="width:18px;height:18px;"></i>
+                    Subject Management
+                </div>
 
-                    <!-- Empty State -->
-                    <tr id="emptyState">
-                        <td colspan="7">
-                            <div class="empty-state-content">
-                                <img src="images/empty_state.png" alt="Empty state illustration" class="empty-state-image" />
-                                <h4 class="text-muted">Import a file to get started</h4>
-                                <p class="text-muted small mb-1">
-                                    Drag &amp; drop your CSV or Excel (.xlsx) file here, or click Import.
-                                </p>
-                                <p class="text-muted small mb-0">
-                                    Required headers: Faculty, Section, Subject, Day, Start Time, End Time.
-                                </p>
+                <div class="card-body">
+
+                    <!-- Subject Form -->
+                    <form id="subjectForm" class="mb-4">
+                        <input type="hidden" id="editSubjectIndex">
+
+                        <div class="form-fields">
+                            <div class="form-row-custom">
+                                <div class="form-group">
+                                    <label class="form-label fw-semibold" for="subjectSection">
+                                        <i data-lucide="users" style="width:16px;height:16px;"></i>
+                                        Section
+                                    </label>
+                                    <select class="form-select" id="subjectSection" required aria-label="Section">
+                                        <option value="">Select Section</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label fw-semibold" for="subjectName">
+                                        <i data-lucide="book-open" style="width:16px;height:16px;"></i>
+                                        Subject
+                                    </label>
+                                    <input type="text" class="form-control" id="subjectName"
+                                           list="subjectSuggestions" required
+                                           placeholder="e.g. Programming 1, Calculus"
+                                           aria-label="Subject name">
+                                    <datalist id="subjectSuggestions"></datalist>
+                                </div>
                             </div>
-                        </td>
-                    </tr>
 
-                </tbody>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-lg text-white"
+                                        id="addSubjectBtn"
+                                        style="background:linear-gradient(135deg,#6a1b9a,#9c27b0);">
+                                    <i data-lucide="plus-circle" style="width:20px;height:20px;"></i>
+                                    <span id="subjectBtnText">Add Subject</span>
+                                </button>
+                                <button type="button" class="btn btn-lg btn-outline-secondary"
+                                        id="cancelSubjectBtn">
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </form>
 
-            </table>
+                    <!-- Search -->
+                    <div class="search-bar mb-3">
+                        <div class="search-input-group">
+                            <i data-lucide="search" style="width:16px;height:16px;color:#6c757d;flex-shrink:0;"></i>
+                            <input type="text" class="search-input" id="subjectSearchInput"
+                                   placeholder="Search subjects..." aria-label="Search subjects">
+                        </div>
+                    </div>
 
+                    <!-- Subjects Table -->
+                    <div class="table-responsive rounded-4">
+                        <table class="table align-middle text-center mb-0"
+                               id="subjectsTable"
+                               role="grid"
+                               aria-label="Subjects table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Section</th>
+                                    <th scope="col">Subject</th>
+                                    <th scope="col" width="120">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="subjectsTableBody">
+                                <tr id="subjectsEmptyState">
+                                    <td colspan="3" class="text-muted py-4">
+                                        No subjects added yet. Add your first subject above.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================= -->
+        <!-- Faculty Loading View -->
+        <!-- ========================= -->
+
+        <div class="view-container d-none" id="loadingView">
+
+            <button type="button" class="btn btn-lg text-white add-load-btn"
+                    id="addLoadViewBtn"
+                    style="background:linear-gradient(135deg,#1a237e,#283593);"
+                    title="Open the form to add a new faculty load entry">
+                <i data-lucide="plus-circle" style="width:22px;height:22px;"></i>
+                Add Faculty Load
+            </button>
+
+            <!-- Faculty Loading Form (hidden by default) -->
+            <div class="card shadow-sm border-0 rounded-4" id="formCard">
+
+                <div class="card-header text-white rounded-top-4 d-flex align-items-center gap-2"
+                     style="background:linear-gradient(135deg,#1a237e,#283593);">
+                    <i data-lucide="plus-circle" style="width:18px;height:18px;"></i>
+                    Faculty Form
+                    <span class="ms-auto badge bg-light text-dark small px-3 py-1" title="Press Ctrl + Enter to submit">
+                        <i data-lucide="keyboard" style="width:12px;height:12px;"></i>
+                        Ctrl + Enter
+                    </span>
+                    <button type="button" class="btn-close btn-close-white ms-2" id="closeFormBtn" aria-label="Close form"></button>
+                </div>
+
+                <div class="card-body">
+
+                    <form id="loadForm" novalidate>
+
+                        <input type="hidden" id="editIndex">
+
+                        <div class="form-fields">
+
+                            <div class="form-row-custom">
+                                <div class="form-group">
+                                    <label class="form-label fw-semibold" for="faculty">
+                                        <i data-lucide="badge-check" style="width:16px;height:16px;"></i>
+                                        Faculty
+                                    </label>
+                                    <div class="drop-field" data-field="faculty">
+                                        <input
+                                            type="text"
+                                            class="form-control drop-target"
+                                            id="faculty"
+                                            list="facultyList"
+                                            required
+                                            autocomplete="off"
+                                            placeholder="e.g. Dr. Cruz, Prof. Santos"
+                                            aria-label="Faculty name">
+                                        <datalist id="facultyList"></datalist>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label fw-semibold" for="section">
+                                        <i data-lucide="users" style="width:16px;height:16px;"></i>
+                                        Section
+                                    </label>
+                                    <div class="drop-field" data-field="section">
+                                        <select class="form-select drop-target" id="section" required aria-label="Section">
+                                            <option value="">Select Section</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label fw-semibold" for="subject">
+                                        <i data-lucide="book-open" style="width:16px;height:16px;"></i>
+                                        Subject
+                                    </label>
+                                    <div class="drop-field" data-field="subject">
+                                        <select class="form-select drop-target" id="subject" required aria-label="Subject">
+                                            <option value="">Select Subject</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label fw-semibold" for="day">
+                                        <i data-lucide="calendar" style="width:16px;height:16px;"></i>
+                                        Day
+                                    </label>
+                                    <div class="drop-field" data-field="day">
+                                        <select class="form-select drop-target" id="day" required aria-label="Day of the week">
+                                            <option value="">Select Day</option>
+                                            <option>Monday</option>
+                                            <option>Tuesday</option>
+                                            <option>Wednesday</option>
+                                            <option>Thursday</option>
+                                            <option>Friday</option>
+                                            <option>Saturday</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label fw-semibold" for="startTime">
+                                        <i data-lucide="clock" style="width:16px;height:16px;"></i>
+                                        Start Time
+                                    </label>
+                                    <div class="drop-field" data-field="startTime">
+                                        <input type="time" class="form-control drop-target" id="startTime" required aria-label="Class start time">
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label fw-semibold" for="endTime">
+                                        <i data-lucide="clock" style="width:16px;height:16px;"></i>
+                                        End Time
+                                    </label>
+                                    <div class="drop-field" data-field="endTime">
+                                        <input type="time" class="form-control drop-target" id="endTime" required aria-label="Class end time">
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            <div class="form-actions">
+                                <button
+                                    type="submit"
+                                    class="btn btn-lg text-white"
+                                    id="submitBtn"
+                                    style="background:linear-gradient(135deg,#1a237e,#283593);"
+                                    title="Add this schedule entry (Ctrl + Enter)">
+                                    <i data-lucide="plus-circle" style="width:20px;height:20px;"></i>
+                                    <span id="submitBtnText">Add Load</span>
+                                </button>
+                                <button type="button" class="btn btn-lg btn-outline-secondary" id="cancelFormBtn">
+                                    Cancel
+                                </button>
+                            </div>
+
+                        </div>
+
+                    </form>
+
+                </div>
+
+            </div>
+
+            <!-- Search & Filter Bar -->
+            <div class="search-bar">
+
+                <div class="search-input-group">
+                    <i data-lucide="search" style="width:16px;height:16px;color:#6c757d;flex-shrink:0;"></i>
+                    <input
+                        type="text"
+                        class="search-input"
+                        id="searchInput"
+                        placeholder="Search faculty, section, subject..."
+                        aria-label="Search records">
+                    <select
+                        class="search-category"
+                        id="searchCategory"
+                        aria-label="Search in category">
+                        <option value="all">All</option>
+                        <option value="faculty">Faculty</option>
+                        <option value="subject">Subject</option>
+                        <option value="section">Section</option>
+                    </select>
+                </div>
+
+                <div class="search-actions">
+                    <select
+                        class="day-filter"
+                        id="dayFilter"
+                        title="Filter by day of the week"
+                        aria-label="Filter by day">
+                        <option value="all">📅 All Days</option>
+                        <option>Monday</option>
+                        <option>Tuesday</option>
+                        <option>Wednesday</option>
+                        <option>Thursday</option>
+                        <option>Friday</option>
+                        <option>Saturday</option>
+                    </select>
+
+                    <div class="position-relative">
+                        <input type="file" id="importFileInput" accept=".csv,.xlsx,.xls" style="display:none;" aria-label="Upload CSV or Excel file">
+                        <button class="btn btn-sm text-white" style="background:#1565c0;" id="importCSVBtn" title="Browse or drag & drop a CSV or Excel file">
+                            <i data-lucide="upload" style="width:14px;height:14px;"></i>
+                            Import
+                        </button>
+                    </div>
+
+                    <button class="btn btn-sm text-white" style="background:#2e7d32;" id="exportCSV" title="Download all records as CSV">
+                        <i data-lucide="download" style="width:14px;height:14px;"></i>
+                        Export
+                    </button>
+                </div>
+
+            </div>
+
+            <!-- Faculty Loading Table -->
+            <div class="card shadow-sm border-0 rounded-4" id="loadingTableCard">
+
+                <div class="file-drop-zone" id="fileDropZone">
+                    <div class="file-drop-content">
+                        <i data-lucide="file-spreadsheet" style="width:48px;height:48px;color:#1565c0;"></i>
+                        <h5 class="fw-semibold" style="color:#1565c0;">Drop your file here</h5>
+                        <p class="text-muted small">Supports: .csv, .xlsx, .xls</p>
+                    </div>
+                </div>
+
+                <div class="table-header-row">
+                    <span class="table-title">
+                        <i data-lucide="table" style="width:16px;height:16px;"></i>
+                        Faculty Loading Table
+                    </span>
+                    <span class="badge bg-secondary text-white small" id="recordCountFull">0 entries</span>
+                </div>
+
+                <div class="table-responsive rounded-bottom-4">
+
+                    <table
+                        class="table align-middle text-center mb-0"
+                        id="mainTableFull"
+                        role="grid"
+                        aria-label="Faculty loading schedule records">
+
+                        <thead>
+                            <tr>
+                                <th class="sortable" data-sort="faculty" scope="col" title="Click to sort">
+                                    Faculty
+                                    <span class="sort-indicator" aria-hidden="true">
+                                        <i data-lucide="chevron-up" style="width:10px;height:10px;"></i>
+                                        <i data-lucide="chevron-down" style="width:10px;height:10px;"></i>
+                                    </span>
+                                </th>
+                                <th class="sortable" data-sort="section" scope="col" title="Click to sort">
+                                    Section
+                                    <span class="sort-indicator" aria-hidden="true">
+                                        <i data-lucide="chevron-up" style="width:10px;height:10px;"></i>
+                                        <i data-lucide="chevron-down" style="width:10px;height:10px;"></i>
+                                    </span>
+                                </th>
+                                <th class="sortable" data-sort="subject" scope="col" title="Click to sort">
+                                    Subject
+                                    <span class="sort-indicator" aria-hidden="true">
+                                        <i data-lucide="chevron-up" style="width:10px;height:10px;"></i>
+                                        <i data-lucide="chevron-down" style="width:10px;height:10px;"></i>
+                                    </span>
+                                </th>
+                                <th scope="col">Day</th>
+                                <th scope="col">Start</th>
+                                <th scope="col">End</th>
+                                <th scope="col" width="120">Actions</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="loadingTableFull">
+
+                            <!-- Empty State -->
+                            <tr id="emptyStateFull">
+                                <td colspan="7">
+                                    <div class="empty-state-content">
+                                        <img src="images/empty_state.png" alt="Empty state illustration" class="empty-state-image" />
+                                        <h4 class="text-muted">No faculty loads yet</h4>
+                                        <p class="text-muted small mb-1">
+                                            Add your first faculty load or import data from a CSV/Excel file.
+                                        </p>
+                                        <p class="text-muted small mb-0">
+                                            Required fields: Faculty, Section, Subject, Day, Start Time, End Time.
+                                        </p>
+                                    </div>
+                                </td>
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
         </div>
 
     </div>
@@ -469,6 +804,118 @@
     </div>
 </div>
 
+<!-- ========================= -->
+<!-- User Manual Modal -->
+<!-- ========================= -->
+
+<div class="modal fade" id="manualModal" tabindex="-1" aria-labelledby="manualModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 rounded-4">
+            <div class="modal-header text-white" style="background:linear-gradient(135deg,#1a237e,#283593);border-radius:16px 16px 0 0;">
+                <h5 class="modal-title" id="manualModalLabel">
+                    <i data-lucide="book-open" style="width:20px;height:20px;"></i>
+                    User Manual
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="manual-content">
+                    <!-- Step 1 -->
+                    <div class="manual-step">
+                        <div class="step-header">
+                            <span class="step-number">1</span>
+                            <h6 class="step-title mb-0">Input Sections</h6>
+                        </div>
+                        <div class="step-body">
+                            <p class="mb-2">Navigate to <strong>Section Management</strong> to add class sections:</p>
+                            <ul class="step-list mb-0">
+                                <li><i data-lucide="book" style="width:14px;height:14px;"></i> Enter the <strong>Program</strong> (e.g., BSCpE, BSIT, BSCS)</li>
+                                <li><i data-lucide="calendar" style="width:14px;height:14px;"></i> Select the <strong>Year Level</strong> (1st to 5th Year)</li>
+                                <li><i data-lucide="hash" style="width:14px;height:14px;"></i> Enter the <strong>Section Name</strong> (e.g., A, B, C)</li>
+                                <li><i data-lucide="plus-circle" style="width:14px;height:14px;"></i> Click <strong>Add Section</strong> to save</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Step 2 -->
+                    <div class="manual-step">
+                        <div class="step-header">
+                            <span class="step-number">2</span>
+                            <h6 class="step-title mb-0">Add Subjects</h6>
+                        </div>
+                        <div class="step-body">
+                            <p class="mb-2">Go to <strong>Subject Management</strong> to add subjects:</p>
+                            <ul class="step-list mb-0">
+                                <li><i data-lucide="users" style="width:14px;height:14px;"></i> Select a <strong>Section</strong> from the dropdown</li>
+                                <li><i data-lucide="book-open" style="width:14px;height:14px;"></i> Enter the <strong>Subject Name</strong> (e.g., Programming 1, Calculus)</li>
+                                <li><i data-lucide="plus-circle" style="width:14px;height:14px;"></i> Click <strong>Add Subject</strong> to save</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Step 3 -->
+                    <div class="manual-step">
+                        <div class="step-header">
+                            <span class="step-number">3</span>
+                            <h6 class="step-title mb-0">Assign Faculty to Subjects</h6>
+                        </div>
+                        <div class="step-body">
+                            <p class="mb-2">In <strong>Faculty Loading</strong>, assign faculty to sections and subjects:</p>
+                            <ul class="step-list mb-0">
+                                <li><i data-lucide="badge-check" style="width:14px;height:14px;"></i> Enter the <strong>Faculty</strong> name (e.g., Dr. Cruz, Prof. Santos)</li>
+                                <li><i data-lucide="users" style="width:14px;height:14px;"></i> Select a <strong>Section</strong> from the dropdown</li>
+                                <li><i data-lucide="book-open" style="width:14px;height:14px;"></i> Select a <strong>Subject</strong> from the dropdown</li>
+                                <li><i data-lucide="calendar" style="width:14px;height:14px;"></i> Choose the <strong>Day</strong> of the week</li>
+                                <li><i data-lucide="clock" style="width:14px;height:14px;"></i> Set the <strong>Start Time</strong> and <strong>End Time</strong></li>
+                                <li><i data-lucide="plus-circle" style="width:14px;height:14px;"></i> Click <strong>Add Load</strong> to assign</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Step 4 -->
+                    <div class="manual-step">
+                        <div class="step-header">
+                            <span class="step-number">4</span>
+                            <h6 class="step-title mb-0">View & Manage Loads</h6>
+                        </div>
+                        <div class="step-body">
+                            <p class="mb-2">View your schedule and manage entries:</p>
+                            <ul class="step-list mb-0">
+                                <li><i data-lucide="table" style="width:14px;height:14px;"></i> View all loads in the <strong>Faculty Loading Table</strong></li>
+                                <li><i data-lucide="pencil" style="width:14px;height:14px;"></i> Click the <strong>Edit</strong> button to modify an entry</li>
+                                <li><i data-lucide="trash-2" style="width:14px;height:14px;"></i> Click the <strong>Delete</strong> button to remove an entry</li>
+                                <li><i data-lucide="search" style="width:14px;height:14px;"></i> Use <strong>Search</strong> to filter by faculty, section, or subject</li>
+                                <li><i data-lucide="calendar" style="width:14px;height:14px;"></i> Use <strong>Day Filter</strong> to view loads by day</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Step 5 -->
+                    <div class="manual-step">
+                        <div class="step-header">
+                            <span class="step-number">5</span>
+                            <h6 class="step-title mb-0">Import/Export Data</h6>
+                        </div>
+                        <div class="step-body">
+                            <p class="mb-2">Import or export your data:</p>
+                            <ul class="step-list mb-0">
+                                <li><i data-lucide="upload" style="width:14px;height:14px;"></i> Click <strong>Import</strong> to upload CSV or Excel files</li>
+                                <li><i data-lucide="download" style="width:14px;height:14px;"></i> Click <strong>Export</strong> to download data as CSV</li>
+                                <li><i data-lucide="trash-2" style="width:14px;height:14px;"></i> Use <strong>Reset Semester</strong> to clear all data (export first!)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0" style="background:#f8f9fa;border-radius:0 0 16px 16px;">
+                <button type="button" class="btn btn-primary px-4 rounded-pill" data-bs-dismiss="modal">
+                    <i data-lucide="check-circle" style="width:16px;height:16px;"></i> Got It!
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- SheetJS for Excel parsing -->
 <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js">
 </script>
@@ -480,4 +927,3 @@
 <script src="script.js"></script>
 
 </body>
-</html>
