@@ -172,6 +172,7 @@ const sectionSearchInput = document.getElementById("sectionSearchInput");
 // Subject Management
 const subjectForm = document.getElementById("subjectForm");
 const subjectSection = document.getElementById("subjectSection");
+const subjectCodeInput = document.getElementById("subjectCode");
 const subjectNameInput = document.getElementById("subjectName");
 const editSubjectIndex = document.getElementById("editSubjectIndex");
 const subjectBtnText = document.getElementById("subjectBtnText");
@@ -219,6 +220,9 @@ const HEADER_MAP = {
     "endtime": "endTime",
     "time start": "startTime",
     "time end": "endTime",
+    "subject code": "subjectCode",
+    "subjectcode": "subjectCode",
+    "code": "subjectCode",
     "room": "room",
     "units": "units"
 };
@@ -849,7 +853,7 @@ function getFilteredData() {
 function getEmptyStateRowFull() {
     return `
         <tr id="emptyStateFull">
-            <td colspan="9">
+            <td colspan="10">
                 <div class="empty-state-content">
                     <img src="images/empty_state.png" alt="Empty state illustration" class="empty-state-image" />
                     <h4 class="text-muted">No faculty loads yet</h4>
@@ -881,7 +885,7 @@ function renderTable() {
         if (filtered.length === 0 && loads.length > 0) {
             loadingTableFull.innerHTML = `
                 <tr>
-                    <td colspan="9" class="text-muted py-4">
+                    <td colspan="10" class="text-muted py-4">
                         <i data-lucide="search" style="width:16px;height:16px;"></i>
                         No records match your search. Try different keywords or clear the filter.
                     </td>
@@ -890,6 +894,10 @@ function renderTable() {
         } else if (filtered.length > 0) {
             filtered.forEach((load, index) => {
                 const originalIndex = loads.indexOf(load);
+
+                // Find subject code from subjects array
+                const matchedSubject = subjects.find(s => s.section === load.section && s.name === load.subject);
+                const subjectCode = matchedSubject ? matchedSubject.code : '';
 
                 loadingTableFull.innerHTML += `
                     <tr class="clickable-row" data-index="${originalIndex}" draggable="true">
@@ -904,6 +912,9 @@ function renderTable() {
                                 <i data-lucide="users" style="width:14px;height:14px;" class="me-1"></i>
                                 ${escapeHtml(load.section)}
                             </span>
+                        </td>
+                        <td>
+                            <span class="badge-subject-code">${escapeHtml(subjectCode || '-')}</span>
                         </td>
                         <td>
                             <span class="badge-subject">
@@ -1124,11 +1135,15 @@ function renderSectionScheduleTable(sectionFullName) {
 if (cellLoads.length > 0) {
                 // Show the first load (or combine multiple)
                 const load = cellLoads[0];
+                // Find subject code from subjects array
+                const matchedSubject = subjects.find(s => s.section === sectionFullName && s.name === load.subject);
+                const subjectCode = matchedSubject ? matchedSubject.code : '';
                 tableHTML += `
                     <td class="schedule-cell">
                         <div class="schedule-item">
-                            <div class="schedule-subject">${escapeHtml(load.subject)}</div>
                             <div class="schedule-faculty">${escapeHtml(load.faculty)}</div>
+                            <div class="schedule-subject-code">${escapeHtml(subjectCode || '')}</div>
+                            <div class="schedule-subject">${escapeHtml(load.subject)}</div>
                             <div class="schedule-time">${load.startTime} - ${load.endTime}</div>
                             <div class="schedule-room">${load.room ? escapeHtml(load.room) : ''}</div>
                         </div>
@@ -1208,24 +1223,57 @@ exportCSV.addEventListener("click", function () {
         return;
     }
 
-    let csv = "Faculty,Section,Subject,Day,Start Time,End Time,Room,Units\n";
+    // Build data array with headers
+    const data = [["Faculty", "Section", "Subject Code", "Subject", "Day", "Start Time", "End Time", "Room", "Units"]];
 
     loads.forEach(load => {
-        csv += `"${load.faculty}","${load.section}","${load.subject}","${load.day}","${load.startTime}","${load.endTime}","${load.room || ''}","${load.units || ''}"\n`;
+        // Find subject code from subjects array
+        const matchedSubject = subjects.find(s => s.section === load.section && s.name === load.subject);
+        const subjectCode = matchedSubject ? matchedSubject.code : '';
+        data.push([
+            load.faculty,
+            load.section,
+            subjectCode,
+            load.subject,
+            load.day,
+            load.startTime,
+            load.endTime,
+            load.room || '',
+            load.units || ''
+        ]);
     });
 
-    const blob = new Blob([csv], { type: "text/csv" });
+    // Create workbook and worksheet using SheetJS
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(data);
+
+    // Auto-fit column widths
+    const colWidths = data[0].map((_, colIndex) => {
+        let maxLen = 0;
+        data.forEach(row => {
+            const cellLen = String(row[colIndex] || '').length;
+            if (cellLen > maxLen) maxLen = cellLen;
+        });
+        return { wch: Math.max(maxLen + 2, 12) };
+    });
+    ws['!cols'] = colWidths;
+
+    XLSX.utils.book_append_sheet(wb, ws, "Faculty Loading");
+
+    // Generate Excel file and trigger download
+    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement("a");
 
     link.href = url;
-    link.download = "Faculty_Loading.csv";
+    link.download = "Faculty_Loading.xlsx";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
 
-    showToast(`Exported ${loads.length} record${loads.length !== 1 ? 's' : ''} as "Faculty_Loading.csv".`, "success");
+    showToast(`Exported ${loads.length} record${loads.length !== 1 ? 's' : ''} as "Faculty_Loading.xlsx".`, "success");
 });
 
 // ===============================
@@ -1517,13 +1565,14 @@ function renderSubjectsTable() {
 
     const filtered = subjects.filter(s =>
         s.section.toLowerCase().includes(query) ||
-        s.name.toLowerCase().includes(query)
+        s.name.toLowerCase().includes(query) ||
+        (s.code && s.code.toLowerCase().includes(query))
     );
 
     if (subjects.length === 0) {
         subjectsTableBody.innerHTML = `
             <tr id="subjectsEmptyState">
-                <td colspan="3" class="text-muted py-4">
+                <td colspan="4" class="text-muted py-4">
                     No subjects added yet. Add your first subject above.
                 </td>
             </tr>
@@ -1537,6 +1586,7 @@ function renderSubjectsTable() {
         subjectsTableBody.innerHTML += `
             <tr>
                 <td>${escapeHtml(s.section)}</td>
+                <td><span class="badge-subject-code">${escapeHtml(s.code || '-')}</span></td>
                 <td>${escapeHtml(s.name)}</td>
                 <td>
                     <button class="btn btn-warning btn-sm action-btn" onclick="editSubject(${index})" title="Edit this subject">
@@ -1568,7 +1618,13 @@ subjectForm.addEventListener("submit", function(e) {
     e.preventDefault();
 
     const section = subjectSection.value;
+    const code = subjectCodeInput.value.trim();
     const name = subjectNameInput.value.trim();
+
+    if (!code) {
+        showToast("Subject code is required.", "error");
+        return;
+    }
 
     if (!name) {
         showToast("Subject name is required.", "error");
@@ -1597,7 +1653,7 @@ subjectForm.addEventListener("submit", function(e) {
         sectionsOfYear.forEach(s => {
             const existingIndex = subjects.findIndex(sub => sub.section === s.fullName && sub.name === name);
             if (existingIndex === -1) {
-                subjects.push({ section: s.fullName, name });
+                subjects.push({ section: s.fullName, code, name });
                 addedCount++;
             } else {
                 skippedCount++;
@@ -1632,6 +1688,7 @@ subjectForm.addEventListener("submit", function(e) {
 
         const subjectData = {
             section,
+            code,
             name
         };
 
@@ -1666,6 +1723,7 @@ cancelSubjectBtn.addEventListener("click", function() {
 function editSubject(index) {
     const s = subjects[index];
     subjectSection.value = s.section;
+    subjectCodeInput.value = s.code || '';
     subjectNameInput.value = s.name;
     editSubjectIndex.value = index;
     subjectBtnText.textContent = "Update Subject";
@@ -2088,6 +2146,11 @@ function exportSectionSchedule(sectionFullName) {
         return;
     }
 
+    // Get section info for the title
+    const sectionData = sections.find(s => s.fullName === sectionFullName);
+    const programDisplay = sectionData && sectionData.program === "BSCpE" ? "BS COMPUTER ENGINEERING (BSCpE)" : (sectionData ? sectionData.program : "");
+    const title = `${programDisplay} ${sectionData ? sectionData.year : ''} ${sectionData ? sectionData.name : sectionFullName} Schedule`;
+
     // Time slots from 7:00 AM to 11:00 PM
     const timeSlots = [
         "7:00–8:00 AM", "8:00–9:00 AM", "9:00–10:00 AM", "10:00–11:00 AM",
@@ -2098,14 +2161,22 @@ function exportSectionSchedule(sectionFullName) {
 
     const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-    // Build CSV in table format with multi-line cells
-    let csv = "TIME,MONDAY,TUESDAY,WEDNESDAY,THURSDAY,FRIDAY,SATURDAY\n";
+    // Build data array
+    const data = [];
 
+    // Row 1: Merged title row (will be merged via sheet merges)
+    const headerRow = [title];
+    for (let i = 1; i <= 6; i++) headerRow.push("");
+    data.push(headerRow);
+
+    // Row 2: Column headers
+    data.push(["TIME", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"]);
+
+    // Data rows
     timeSlots.forEach((timeSlot, timeIndex) => {
         const row = [timeSlot];
         
         days.forEach(day => {
-            // Find loads for this time slot and day
             const cellLoads = sectionLoads.filter(l => {
                 const startHour = parseInt(l.startTime.split(':')[0]);
                 const endHour = parseInt(l.endTime.split(':')[0]);
@@ -2119,8 +2190,9 @@ function exportSectionSchedule(sectionFullName) {
 
             if (cellLoads.length > 0) {
                 const load = cellLoads[0];
-                // Format with multi-line: Subject, Faculty, Time, Room on separate lines
-                let cellContent = load.subject + "\n" + load.faculty + "\n" + load.startTime + "-" + load.endTime;
+                const matchedSubject = subjects.find(s => s.section === sectionFullName && s.name === load.subject);
+                const subjectCode = matchedSubject ? matchedSubject.code : '';
+                let cellContent = load.faculty + "\n" + (subjectCode || '') + "\n" + load.subject + "\n" + load.startTime + "-" + load.endTime;
                 if (load.room) {
                     cellContent += "\n" + load.room;
                 }
@@ -2130,19 +2202,64 @@ function exportSectionSchedule(sectionFullName) {
             }
         });
 
-        csv += row.map(cell => `"${cell}"`).join(",") + "\n";
+        data.push(row);
     });
 
-    const blob = new Blob([csv], { type: "text/csv" });
+    // Create workbook and worksheet using SheetJS
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(data);
+
+    // Merge title cell across all 7 columns
+    ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }];
+
+    // Style the title row (bold, larger text)
+    // SheetJS doesn't support rich styling in simple write, but we can set cell styles
+    for (let c = 0; c < 7; c++) {
+        const cellRef = XLSX.utils.encode_cell({ r: 0, c });
+        if (ws[cellRef]) {
+            ws[cellRef].s = {
+                font: { bold: true, sz: 14 },
+                alignment: { horizontal: 'center', vertical: 'center', wrapText: true }
+            };
+        }
+    }
+
+    // Style header row
+    for (let c = 0; c < 7; c++) {
+        const cellRef = XLSX.utils.encode_cell({ r: 1, c });
+        if (ws[cellRef]) {
+            ws[cellRef].s = {
+                font: { bold: true, sz: 11 },
+                alignment: { horizontal: 'center', vertical: 'center', wrapText: true }
+            };
+        }
+    }
+
+    // Auto-fit column widths
+    const colWidths = [14, 22, 22, 22, 22, 22, 22];
+    ws['!cols'] = colWidths.map(w => ({ wch: w }));
+
+    // Set row heights for title row and data rows
+    ws['!rows'] = [];
+    ws['!rows'][0] = { hpx: 40 }; // Title row height
+    for (let i = 2; i < data.length; i++) {
+        ws['!rows'][i] = { hpx: 80 }; // Data row height for multi-line content
+    }
+
+    XLSX.utils.book_append_sheet(wb, ws, "Schedule");
+
+    // Generate Excel file and trigger download
+    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement("a");
 
     link.href = url;
-    link.download = `${sectionFullName.replace(/\s+/g, '_')}_Schedule.csv`;
+    link.download = `${sectionFullName.replace(/\s+/g, '_')}_Schedule.xlsx`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
 
-    showToast(`Exported schedule for "${sectionFullName}".`, "success");
+    showToast(`Exported schedule for "${sectionFullName}" as Excel.`, "success");
 }

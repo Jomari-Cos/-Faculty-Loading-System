@@ -343,6 +343,16 @@
                                 </div>
 
                                 <div class="form-group">
+                                    <label class="form-label fw-semibold" for="subjectCode">
+                                        <i data-lucide="hash" style="width:16px;height:16px;"></i>
+                                        Subject Code
+                                    </label>
+                                    <input type="text" class="form-control" id="subjectCode"
+                                           required placeholder="e.g. CpE 311, IT 221"
+                                           aria-label="Subject code">
+                                </div>
+
+                                <div class="form-group">
                                     <label class="form-label fw-semibold" for="subjectName">
                                         <i data-lucide="book-open" style="width:16px;height:16px;"></i>
                                         Subject
@@ -396,13 +406,14 @@
                             <thead>
                                 <tr>
                                     <th scope="col">Section</th>
+                                    <th scope="col">Subject Code</th>
                                     <th scope="col">Subject</th>
                                     <th scope="col" width="120">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="subjectsTableBody">
                                 <tr id="subjectsEmptyState">
-                                    <td colspan="3" class="text-muted py-4">
+                                    <td colspan="4" class="text-muted py-4">
                                         No subjects added yet. Add your first subject above.
                                     </td>
                                 </tr>
@@ -823,6 +834,7 @@
                                         <i data-lucide="chevron-down" style="width:10px;height:10px;"></i>
                                     </span>
                                 </th>
+                                <th scope="col">Subject Code</th>
                                 <th class="sortable" data-sort="subject" scope="col" title="Click to sort">
                                     Subject
                                     <span class="sort-indicator" aria-hidden="true">
@@ -843,7 +855,7 @@
 
                             <!-- Empty State -->
                             <tr id="emptyStateFull">
-                                <td colspan="9">
+                                <td colspan="10">
                                     <div class="empty-state-content">
                                         <img src="images/empty_state.png" alt="Empty state illustration" class="empty-state-image" />
                                         <h4 class="text-muted">No faculty loads yet</h4>
