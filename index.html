@@ -975,11 +975,12 @@
             </div>
             <div class="modal-body p-0">
                 <div class="manual-content">
-                    <!-- Step 1 -->
+
+                    <!-- Step 1: Create Sections -->
                     <div class="manual-step">
                         <div class="step-header">
                             <span class="step-number">1</span>
-                            <h6 class="step-title mb-0">Input Sections</h6>
+                            <h6 class="step-title mb-0">Create Sections</h6>
                         </div>
                         <div class="step-body">
                             <p class="mb-2">Navigate to <strong>Section Management</strong> to add class sections:</p>
@@ -989,10 +990,11 @@
                                 <li><i data-lucide="hash" style="width:14px;height:14px;"></i> Enter the <strong>Section Name</strong> (e.g., A, B, C)</li>
                                 <li><i data-lucide="plus-circle" style="width:14px;height:14px;"></i> Click <strong>Add Section</strong> to save</li>
                             </ul>
+                            <p class="text-muted small mt-2 mb-0">Example: BSCpE 1st Year A → Creates "BSCpE 1st Year A"</p>
                         </div>
                     </div>
 
-                    <!-- Step 2 -->
+                    <!-- Step 2: Add Subjects -->
                     <div class="manual-step">
                         <div class="step-header">
                             <span class="step-number">2</span>
@@ -1002,64 +1004,176 @@
                             <p class="mb-2">Go to <strong>Subject Management</strong> to add subjects:</p>
                             <ul class="step-list mb-0">
                                 <li><i data-lucide="users" style="width:14px;height:14px;"></i> Select a <strong>Section</strong> from the dropdown</li>
+                                <li><i data-lucide="hash" style="width:14px;height:14px;"></i> Enter the <strong>Subject Code</strong> (e.g., CpE 311, IT 221)</li>
                                 <li><i data-lucide="book-open" style="width:14px;height:14px;"></i> Enter the <strong>Subject Name</strong> (e.g., Programming 1, Calculus)</li>
                                 <li><i data-lucide="plus-circle" style="width:14px;height:14px;"></i> Click <strong>Add Subject</strong> to save</li>
+                                <li><i data-lucide="layers" style="width:14px;height:14px;"></i> Check <strong>"Apply to all sections of the same year level"</strong> to add a subject to multiple sections at once</li>
                             </ul>
                         </div>
                     </div>
 
-                    <!-- Step 3 -->
+                    <!-- Step 3: Create Rooms -->
                     <div class="manual-step">
                         <div class="step-header">
                             <span class="step-number">3</span>
-                            <h6 class="step-title mb-0">Assign Faculty to Subjects</h6>
+                            <h6 class="step-title mb-0">Create Rooms</h6>
+                        </div>
+                        <div class="step-body">
+                            <p class="mb-2">Go to <strong>Room Management</strong> to add rooms:</p>
+                            <ul class="step-list mb-0">
+                                <li><i data-lucide="building-2" style="width:14px;height:14px;"></i> Enter the <strong>Room Name</strong> (e.g., Room 101, Lab A)</li>
+                                <li><i data-lucide="users" style="width:14px;height:14px;"></i> Enter the <strong>Capacity</strong> (e.g., 30, 50)</li>
+                                <li><i data-lucide="plus-circle" style="width:14px;height:14px;"></i> Click <strong>Add Room</strong> to save</li>
+                            </ul>
+                            <p class="text-muted small mt-2 mb-0">The system prevents double-booking of rooms at the same time.</p>
+                        </div>
+                    </div>
+
+                    <!-- Step 4: Assign Faculty Loads -->
+                    <div class="manual-step">
+                        <div class="step-header">
+                            <span class="step-number">4</span>
+                            <h6 class="step-title mb-0">Assign Faculty Loads</h6>
                         </div>
                         <div class="step-body">
                             <p class="mb-2">In <strong>Faculty Loading</strong>, assign faculty to sections and subjects:</p>
                             <ul class="step-list mb-0">
                                 <li><i data-lucide="badge-check" style="width:14px;height:14px;"></i> Enter the <strong>Faculty</strong> name (e.g., Dr. Cruz, Prof. Santos)</li>
                                 <li><i data-lucide="users" style="width:14px;height:14px;"></i> Select a <strong>Section</strong> from the dropdown</li>
-                                <li><i data-lucide="book-open" style="width:14px;height:14px;"></i> Select a <strong>Subject</strong> from the dropdown</li>
+                                <li><i data-lucide="book-open" style="width:14px;height:14px;"></i> Select a <strong>Subject</strong> from the dropdown (filtered by section)</li>
                                 <li><i data-lucide="calendar" style="width:14px;height:14px;"></i> Choose the <strong>Day</strong> of the week</li>
                                 <li><i data-lucide="clock" style="width:14px;height:14px;"></i> Set the <strong>Start Time</strong> and <strong>End Time</strong></li>
-                                <li><i data-lucide="plus-circle" style="width:14px;height:14px;"></i> Click <strong>Add Load</strong> to assign</li>
+                                <li><i data-lucide="building-2" style="width:14px;height:14px;"></i> Select a <strong>Room</strong> (optional)</li>
+                                <li><i data-lucide="hash" style="width:14px;height:14px;"></i> Enter <strong>Units</strong> (optional, 1-5)</li>
+                                <li><i data-lucide="plus-circle" style="width:14px;height:14px;"></i> Click <strong>Add Load</strong> or press <strong>Ctrl + Enter</strong> to save</li>
                             </ul>
+                            <p class="text-muted small mt-2 mb-0">The system automatically checks for scheduling conflicts.</p>
                         </div>
                     </div>
 
-                    <!-- Step 4 -->
-                    <div class="manual-step">
-                        <div class="step-header">
-                            <span class="step-number">4</span>
-                            <h6 class="step-title mb-0">View & Manage Loads</h6>
-                        </div>
-                        <div class="step-body">
-                            <p class="mb-2">View your schedule and manage entries:</p>
-                            <ul class="step-list mb-0">
-                                <li><i data-lucide="table" style="width:14px;height:14px;"></i> View all loads in the <strong>Faculty Loading Table</strong></li>
-                                <li><i data-lucide="pencil" style="width:14px;height:14px;"></i> Click the <strong>Edit</strong> button to modify an entry</li>
-                                <li><i data-lucide="trash-2" style="width:14px;height:14px;"></i> Click the <strong>Delete</strong> button to remove an entry</li>
-                                <li><i data-lucide="search" style="width:14px;height:14px;"></i> Use <strong>Search</strong> to filter by faculty, section, or subject</li>
-                                <li><i data-lucide="calendar" style="width:14px;height:14px;"></i> Use <strong>Day Filter</strong> to view loads by day</li>
-                            </ul>
-                        </div>
-                    </div>
-
-                    <!-- Step 5 -->
+                    <!-- Step 5: Search, Filter & Sort -->
                     <div class="manual-step">
                         <div class="step-header">
                             <span class="step-number">5</span>
-                            <h6 class="step-title mb-0">Import/Export Data</h6>
+                            <h6 class="step-title mb-0">Search, Filter & Sort</h6>
+                        </div>
+                        <div class="step-body">
+                            <p class="mb-2">Use the search bar to find records quickly:</p>
+                            <ul class="step-list mb-0">
+                                <li><i data-lucide="search" style="width:14px;height:14px;"></i> Type keywords to search across all fields</li>
+                                <li><i data-lucide="filter" style="width:14px;height:14px;"></i> Select a <strong>Search Category</strong> (All, Faculty, Subject, Section)</li>
+                                <li><i data-lucide="calendar" style="width:14px;height:14px;"></i> Use the <strong>Day Filter</strong> to view loads by specific day</li>
+                                <li><i data-lucide="arrow-up-down" style="width:14px;height:14px;"></i> Click on <strong>sortable column headers</strong> (Faculty, Section, Subject) to sort A-Z or Z-A</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Step 6: Edit & Delete Records -->
+                    <div class="manual-step">
+                        <div class="step-header">
+                            <span class="step-number">6</span>
+                            <h6 class="step-title mb-0">Edit & Delete Records</h6>
+                        </div>
+                        <div class="step-body">
+                            <p class="mb-2">Manage your schedule entries:</p>
+                            <ul class="step-list mb-0">
+                                <li><i data-lucide="pencil" style="width:14px;height:14px;"></i> Click the <strong>Edit (pencil)</strong> button to modify an entry</li>
+                                <li><i data-lucide="trash-2" style="width:14px;height:14px;"></i> Click the <strong>Delete (trash)</strong> button to remove an entry</li>
+                                <li><i data-lucide="mouse-pointer-2" style="width:14px;height:14px;"></i> Click any <strong>table row</strong> to populate the form with that record</li>
+                                <li><i data-lucide="grip-vertical" style="width:14px;height:14px;"></i> <strong>Drag</strong> a table row onto a form field to auto-fill it</li>
+                                <li><i data-lucide="trash-2" style="width:14px;height:14px;"></i> Use <strong>Reset Semester</strong> in the sidebar to clear all data (export first!)</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Step 7: Import/Export Data -->
+                    <div class="manual-step">
+                        <div class="step-header">
+                            <span class="step-number">7</span>
+                            <h6 class="step-title mb-0">Import & Export Data</h6>
                         </div>
                         <div class="step-body">
                             <p class="mb-2">Import or export your data:</p>
                             <ul class="step-list mb-0">
                                 <li><i data-lucide="upload" style="width:14px;height:14px;"></i> Click <strong>Import</strong> to upload CSV or Excel files</li>
-                                <li><i data-lucide="download" style="width:14px;height:14px;"></i> Click <strong>Export</strong> to download data as CSV</li>
-                                <li><i data-lucide="trash-2" style="width:14px;height:14px;"></i> Use <strong>Reset Semester</strong> to clear all data (export first!)</li>
+                                <li><i data-lucide="file-spreadsheet" style="width:14px;height:14px;"></i> <strong>Drag & drop</strong> a file onto the table area to import</li>
+                                <li><i data-lucide="download" style="width:14px;height:14px;"></i> Click <strong>Export</strong> to download all records as Excel (.xlsx)</li>
+                            </ul>
+                            <p class="text-muted small mt-2 mb-0">Required import headers: Faculty, Section, Subject, Day, Start Time, End Time</p>
+                        </div>
+                    </div>
+
+                    <!-- Step 8: View Faculty List -->
+                    <div class="manual-step">
+                        <div class="step-header">
+                            <span class="step-number">8</span>
+                            <h6 class="step-title mb-0">View Faculty List</h6>
+                        </div>
+                        <div class="step-body">
+                            <p class="mb-2">Go to <strong>Faculty List</strong> to see a summary of all faculty:</p>
+                            <ul class="step-list mb-0">
+                                <li><i data-lucide="badge-check" style="width:14px;height:14px;"></i> View each faculty member's total <strong>Loads</strong> and <strong>Units</strong></li>
+                                <li><i data-lucide="users" style="width:14px;height:14px;"></i> See which <strong>Sections</strong> and <strong>Subjects</strong> they teach</li>
+                                <li><i data-lucide="search" style="width:14px;height:14px;"></i> Use the search box to filter faculty by name, section, or subject</li>
+                                <li><i data-lucide="info" style="width:14px;height:14px;"></i> The list is automatically populated from the Faculty Loading entries</li>
                             </ul>
                         </div>
                     </div>
+
+                    <!-- Step 9: View Section Schedule -->
+                    <div class="manual-step">
+                        <div class="step-header">
+                            <span class="step-number">9</span>
+                            <h6 class="step-title mb-0">View Section Schedules</h6>
+                        </div>
+                        <div class="step-body">
+                            <p class="mb-2">View a visual schedule for any section:</p>
+                            <ul class="step-list mb-0">
+                                <li><i data-lucide="users" style="width:14px;height:14px;"></i> Click any <strong>section button</strong> on the Dashboard</li>
+                                <li><i data-lucide="calendar" style="width:14px;height:14px;"></i> See a time grid showing classes from 7:00 AM to 11:00 PM</li>
+                                <li><i data-lucide="clock" style="width:14px;height:14px;"></i> The <strong>12:00–1:00 PM</strong> slot is marked as <strong>BREAK TIME</strong></li>
+                                <li><i data-lucide="download" style="width:14px;height:14px;"></i> Click <strong>Export CSV</strong> to download the schedule</li>
+                                <li><i data-lucide="badge-check" style="width:14px;height:14px;"></i> Each cell shows the faculty, subject, time, and room</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Step 10: Dashboard Overview -->
+                    <div class="manual-step">
+                        <div class="step-header">
+                            <span class="step-number">10</span>
+                            <h6 class="step-title mb-0">Dashboard Overview</h6>
+                        </div>
+                        <div class="step-body">
+                            <p class="mb-2">The <strong>Dashboard</strong> gives you a quick overview:</p>
+                            <ul class="step-list mb-0">
+                                <li><i data-lucide="clipboard-list" style="width:14px;height:14px;"></i> <strong>Loads</strong> — total number of schedule entries</li>
+                                <li><i data-lucide="badge-check" style="width:14px;height:14px;"></i> <strong>Faculty</strong> — unique faculty members assigned</li>
+                                <li><i data-lucide="users" style="width:14px;height:14px;"></i> <strong>Section</strong> — unique sections created</li>
+                                <li><i data-lucide="book-open" style="width:14px;height:14px;"></i> <strong>Subject</strong> — unique subjects added</li>
+                                <li><i data-lucide="plus-circle" style="width:14px;height:14px;"></i> Use <strong>Quick Actions</strong> to navigate to any management view</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Step 11: Tips & Best Practices -->
+                    <div class="manual-step">
+                        <div class="step-header">
+                            <span class="step-number">11</span>
+                            <h6 class="step-title mb-0">Tips & Best Practices</h6>
+                        </div>
+                        <div class="step-body">
+                            <ul class="step-list mb-0">
+                                <li><i data-lucide="list-ordered" style="width:14px;height:14px;"></i> <strong>Create sections first</strong> before adding subjects or faculty loads</li>
+                                <li><i data-lucide="list-ordered" style="width:14px;height:14px;"></i> <strong>Add all subjects</strong> to each section before creating faculty loads</li>
+                                <li><i data-lucide="download" style="width:14px;height:14px;"></i> <strong>Export regularly</strong> for backup before making major changes</li>
+                                <li><i data-lucide="keyboard" style="width:14px;height:14px;"></i> Use <strong>Ctrl + Enter</strong> to quickly submit the form</li>
+                                <li><i data-lucide="refresh-ccw" style="width:14px;height:14px;"></i> After adding a load, Faculty and Section values are retained for quick re-entry</li>
+                                <li><i data-lucide="alert-triangle" style="width:14px;height:14px;"></i> The system automatically checks for <strong>scheduling conflicts</strong> before saving</li>
+                            </ul>
+                        </div>
+                    </div>
+
                 </div>
             </div>
             <div class="modal-footer border-0" style="background:#f8f9fa;border-radius:0 0 16px 16px;">

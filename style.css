@@ -1326,3 +1326,27 @@ body {
 #sectionScheduleTable tbody tr:nth-of-type(even) td.empty-cell {
     background: #f8f9fa;
 }
+
+/* ===========================================
+   Break Time Cell in Section Schedule
+   =========================================== */
+
+#sectionScheduleTable td.break-cell {
+    background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+    text-align: center;
+    vertical-align: middle;
+    border: 2px dashed #ff9800;
+}
+
+.break-time-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-weight: 700;
+    font-size: 1rem;
+    color: #e65100;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    padding: 10px 0;
+}

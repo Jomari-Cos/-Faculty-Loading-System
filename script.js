@@ -1091,7 +1091,7 @@ function updateSummary() {
 function renderSectionScheduleTable(sectionFullName) {
     if (!sectionScheduleTableBody) return;
 
-    // Time slots from 7:00 AM to 11:00 PM
+    // Time slots from 7:00 AM to 11:00 PM (index 5 = 12:00–1:00 PM is BREAK TIME)
     const timeSlots = [
         "7:00–8:00 AM", "8:00–9:00 AM", "9:00–10:00 AM", "10:00–11:00 AM",
         "11:00–12:00 PM", "12:00–1:00 PM", "1:00–2:00 PM", "2:00–3:00 PM",
@@ -1099,10 +1099,16 @@ function renderSectionScheduleTable(sectionFullName) {
         "7:00–8:00 PM", "8:00–9:00 PM", "9:00–10:00 PM", "10:00–11:00 PM"
     ];
 
+    const BREAK_TIME_INDEX = 5; // 12:00–1:00 PM
     const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
     // Get loads for this section
     const sectionLoads = loads.filter(l => l.section === sectionFullName);
+
+    // Pre-compute which loads are placed in each day+slot to handle rowspan merging
+    // For each day, track which loads have been rendered (to skip duplicates across slots)
+    const dayLoadsPlaced = {};
+    days.forEach(day => { dayLoadsPlaced[day] = new Set(); });
 
     // Build schedule grid
     let tableHTML = "";
@@ -1112,34 +1118,76 @@ function renderSectionScheduleTable(sectionFullName) {
         tableHTML += `<td class="time-slot">${timeSlot}</td>`;
 
         days.forEach(day => {
+            // 12:00–1:00 PM is BREAK TIME — render merged break cell
+            if (timeIndex === BREAK_TIME_INDEX) {
+                if (day === "Monday") {
+                    // Render a single cell spanning all 6 days
+                    tableHTML += `<td class="break-cell" colspan="6">
+                        <div class="break-time-content">
+                            <i data-lucide="coffee" style="width:18px;height:18px;"></i>
+                            BREAK TIME
+                        </div>
+                    </td>`;
+                }
+                return;
+            }
+
             // Find loads for this time slot and day
             const cellLoads = sectionLoads.filter(l => {
-                // Check if this load falls within this time slot
                 const loadStart = l.startTime;
                 const loadEnd = l.endTime;
                 const slotStart = String(timeIndex + 7).padStart(2, '0') + ":00";
                 const slotEnd = String(timeIndex + 8).padStart(2, '0') + ":00";
 
-                // Convert to 24-hour format for comparison
                 const startHour = parseInt(loadStart.split(':')[0]);
                 const endHour = parseInt(loadEnd.split(':')[0]);
                 const slotStartHour = timeIndex + 7;
                 const slotEndHour = timeIndex + 8;
 
-                // Check if load is on this day and overlaps with this time slot
                 return l.day === day && 
                        ((startHour < slotEndHour && endHour > slotStartHour) ||
                         (startHour <= slotStartHour && endHour >= slotEndHour));
             });
 
-if (cellLoads.length > 0) {
-                // Show the first load (or combine multiple)
+            if (cellLoads.length > 0) {
                 const load = cellLoads[0];
+                // Create a unique key for this load to track if already placed
+                const loadKey = load.faculty + '|' + load.subject + '|' + load.startTime + '|' + load.endTime;
+
+                if (dayLoadsPlaced[day].has(loadKey)) {
+                    // Already rendered this load in a previous time slot — skip (rowspan covers it)
+                    return;
+                }
+
+                // Mark this load as placed for this day
+                dayLoadsPlaced[day].add(loadKey);
+
+                // Calculate how many time slots this load spans (for rowspan)
+                const startHour = parseInt(load.startTime.split(':')[0]);
+                const endHour = parseInt(load.endTime.split(':')[0]);
+                const slotStartHour = timeIndex + 7;
+                const slotEndHour = timeIndex + 8;
+
+                // Count how many subsequent slots this load also occupies
+                let rowspan = 1;
+                for (let t = timeIndex + 1; t < timeSlots.length; t++) {
+                    if (t === BREAK_TIME_INDEX) continue; // skip break slot
+                    const nextSlotStart = t + 7;
+                    const nextSlotEnd = t + 8;
+                    if (startHour < nextSlotEnd && endHour > nextSlotStart) {
+                        rowspan++;
+                    } else {
+                        break;
+                    }
+                }
+
                 // Find subject code from subjects array
                 const matchedSubject = subjects.find(s => s.section === sectionFullName && s.name === load.subject);
                 const subjectCode = matchedSubject ? matchedSubject.code : '';
+
+                const rowspanAttr = rowspan > 1 ? ` rowspan="${rowspan}"` : '';
                 tableHTML += `
-                    <td class="schedule-cell">
+                    <td class="schedule-cell"${rowspanAttr}>
                         <div class="schedule-item">
                             <div class="schedule-faculty">${escapeHtml(load.faculty)}</div>
                             <div class="schedule-subject-code">${escapeHtml(subjectCode || '')}</div>
@@ -1158,6 +1206,7 @@ if (cellLoads.length > 0) {
     });
 
     sectionScheduleTableBody.innerHTML = tableHTML;
+    lucide.createIcons();
 }
 
 // ===============================
@@ -2159,10 +2208,12 @@ function exportSectionSchedule(sectionFullName) {
         "7:00–8:00 PM", "8:00–9:00 PM", "9:00–10:00 PM", "10:00–11:00 PM"
     ];
 
+    const BREAK_TIME_INDEX = 5; // 12:00–1:00 PM
     const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
     // Build data array
     const data = [];
+    const merges = [];
 
     // Row 1: Merged title row (will be merged via sheet merges)
     const headerRow = [title];
@@ -2172,11 +2223,27 @@ function exportSectionSchedule(sectionFullName) {
     // Row 2: Column headers
     data.push(["TIME", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"]);
 
+    // Track which cells have been placed (for rowspan merging)
+    // For each day, track which loads have been rendered
+    const dayLoadsPlaced = {};
+    days.forEach(day => { dayLoadsPlaced[day] = new Set(); });
+
     // Data rows
     timeSlots.forEach((timeSlot, timeIndex) => {
         const row = [timeSlot];
         
         days.forEach(day => {
+            // 12:00–1:00 PM is BREAK TIME
+            if (timeIndex === BREAK_TIME_INDEX) {
+                if (day === "Monday") {
+                    // Merge across all 6 days
+                    for (let d = 0; d < 6; d++) {
+                        row.push(d === 0 ? "BREAK TIME" : "");
+                    }
+                }
+                return;
+            }
+
             const cellLoads = sectionLoads.filter(l => {
                 const startHour = parseInt(l.startTime.split(':')[0]);
                 const endHour = parseInt(l.endTime.split(':')[0]);
@@ -2190,6 +2257,39 @@ function exportSectionSchedule(sectionFullName) {
 
             if (cellLoads.length > 0) {
                 const load = cellLoads[0];
+                // Create a unique key for this load to track if already placed
+                const loadKey = load.faculty + '|' + load.subject + '|' + load.startTime + '|' + load.endTime;
+
+                if (dayLoadsPlaced[day].has(loadKey)) {
+                    // Already rendered this load in a previous time slot — skip (rowspan covers it)
+                    // Add empty cell to maintain row structure
+                    row.push("");
+                    return;
+                }
+
+                // Mark this load as placed for this day
+                dayLoadsPlaced[day].add(loadKey);
+
+                // Calculate how many time slots this load spans (for rowspan)
+                const startHour = parseInt(load.startTime.split(':')[0]);
+                const endHour = parseInt(load.endTime.split(':')[0]);
+                const slotStartHour = timeIndex + 7;
+                const slotEndHour = timeIndex + 8;
+
+                // Count how many subsequent slots this load also occupies
+                let rowspan = 1;
+                for (let t = timeIndex + 1; t < timeSlots.length; t++) {
+                    if (t === BREAK_TIME_INDEX) continue; // skip break slot
+                    const nextSlotStart = t + 7;
+                    const nextSlotEnd = t + 8;
+                    if (startHour < nextSlotEnd && endHour > nextSlotStart) {
+                        rowspan++;
+                    } else {
+                        break;
+                    }
+                }
+
+                // Find subject code from subjects array
                 const matchedSubject = subjects.find(s => s.section === sectionFullName && s.name === load.subject);
                 const subjectCode = matchedSubject ? matchedSubject.code : '';
                 let cellContent = load.faculty + "\n" + (subjectCode || '') + "\n" + load.subject + "\n" + load.startTime + "-" + load.endTime;
@@ -2197,6 +2297,13 @@ function exportSectionSchedule(sectionFullName) {
                     cellContent += "\n" + load.room;
                 }
                 row.push(cellContent);
+
+                // Add merge for rowspan (if more than 1)
+                if (rowspan > 1) {
+                    const dayColIndex = days.indexOf(day) + 1; // +1 because TIME is column 0
+                    const currentRow = data.length; // Current row index in data array
+                    merges.push({ s: { r: currentRow, c: dayColIndex }, e: { r: currentRow + rowspan - 1, c: dayColIndex } });
+                }
             } else {
                 row.push("");
             }
@@ -2210,7 +2317,13 @@ function exportSectionSchedule(sectionFullName) {
     const ws = XLSX.utils.aoa_to_sheet(data);
 
     // Merge title cell across all 7 columns
-    ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }];
+    // Merge BREAK TIME row (row 7 = 12:00-1:00 PM) across Monday-Saturday (columns 1-6)
+    const breakTimeRow = 1 + 1 + BREAK_TIME_INDEX; // title(1) + header(1) + breakTimeIndex(5) = 7
+    merges.push(
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } },
+        { s: { r: breakTimeRow, c: 1 }, e: { r: breakTimeRow, c: 6 } }
+    );
+    ws['!merges'] = merges;
 
     // Style the title row (bold, larger text)
     // SheetJS doesn't support rich styling in simple write, but we can set cell styles
@@ -2230,6 +2343,17 @@ function exportSectionSchedule(sectionFullName) {
         if (ws[cellRef]) {
             ws[cellRef].s = {
                 font: { bold: true, sz: 11 },
+                alignment: { horizontal: 'center', vertical: 'center', wrapText: true }
+            };
+        }
+    }
+
+    // Style BREAK TIME row (bold, centered, larger text)
+    for (let c = 0; c < 7; c++) {
+        const cellRef = XLSX.utils.encode_cell({ r: breakTimeRow, c });
+        if (ws[cellRef]) {
+            ws[cellRef].s = {
+                font: { bold: true, sz: 12, color: { rgb: "E65100" } },
                 alignment: { horizontal: 'center', vertical: 'center', wrapText: true }
             };
         }
