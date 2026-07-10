@@ -653,43 +653,84 @@
                                     </div>
                                 </div>
 
-                                <div class="form-group">
-                                    <label class="form-label fw-semibold" for="day">
-                                        <i data-lucide="calendar" style="width:16px;height:16px;"></i>
-                                        Day
-                                    </label>
-                                    <div class="drop-field" data-field="day">
-                                        <select class="form-select drop-target" id="day" required aria-label="Day of the week">
-                                            <option value="">Select Day</option>
-                                            <option>Monday</option>
-                                            <option>Tuesday</option>
-                                            <option>Wednesday</option>
-                                            <option>Thursday</option>
-                                            <option>Friday</option>
-                                            <option>Saturday</option>
-                                        </select>
-                                    </div>
-                                </div>
+                                 <div class="form-group">
+                                     <label class="form-label fw-semibold" for="day">
+                                         <i data-lucide="calendar" style="width:16px;height:16px;"></i>
+                                         Day
+                                     </label>
+                                     <div class="drop-field" data-field="day">
+                                         <select class="form-select drop-target" id="day" required aria-label="Day of the week">
+                                             <option value="">Select Day</option>
+                                             <option>Monday</option>
+                                             <option>Tuesday</option>
+                                             <option>Wednesday</option>
+                                             <option>Thursday</option>
+                                             <option>Friday</option>
+                                             <option>Saturday</option>
+                                         </select>
+                                     </div>
+                                 </div>
 
-                                <div class="form-group">
-                                    <label class="form-label fw-semibold" for="startTime">
-                                        <i data-lucide="clock" style="width:16px;height:16px;"></i>
-                                        Start Time
-                                    </label>
-                                    <div class="drop-field" data-field="startTime">
-                                        <input type="time" class="form-control drop-target" id="startTime" required aria-label="Class start time">
-                                    </div>
-                                </div>
+                                 <!-- Has a Break Radio Button -->
+                                 <div class="form-group">
+                                     <label class="form-label fw-semibold">
+                                         <i data-lucide="coffee" style="width:16px;height:16px;"></i>
+                                         Has a Break?
+                                     </label>
+                                     <div class="break-radio-group">
+                                         <div class="form-check form-check-inline">
+                                             <input class="form-check-input" type="radio" name="hasBreak" id="hasBreakNo" value="no" checked>
+                                             <label class="form-check-label" for="hasBreakNo">No</label>
+                                         </div>
+                                         <div class="form-check form-check-inline">
+                                             <input class="form-check-input" type="radio" name="hasBreak" id="hasBreakYes" value="yes">
+                                             <label class="form-check-label" for="hasBreakYes">Yes</label>
+                                         </div>
+                                     </div>
+                                 </div>
 
-                                <div class="form-group">
-                                    <label class="form-label fw-semibold" for="endTime">
-                                        <i data-lucide="clock" style="width:16px;height:16px;"></i>
-                                        End Time
-                                    </label>
-                                    <div class="drop-field" data-field="endTime">
-                                        <input type="time" class="form-control drop-target" id="endTime" required aria-label="Class end time">
-                                    </div>
-                                </div>
+                                 <div class="form-group">
+                                     <label class="form-label fw-semibold" for="startTime">
+                                         <i data-lucide="clock" style="width:16px;height:16px;"></i>
+                                         Start Time
+                                     </label>
+                                     <div class="drop-field" data-field="startTime">
+                                         <input type="time" class="form-control drop-target" id="startTime" required aria-label="Class start time">
+                                     </div>
+                                 </div>
+
+                                 <div class="form-group">
+                                     <label class="form-label fw-semibold" for="endTime">
+                                         <i data-lucide="clock" style="width:16px;height:16px;"></i>
+                                         End Time
+                                     </label>
+                                     <div class="drop-field" data-field="endTime">
+                                         <input type="time" class="form-control drop-target" id="endTime" required aria-label="Class end time">
+                                     </div>
+                                 </div>
+
+                                 <!-- Second Session Time Fields (Hidden by default) -->
+                                 <div class="break-session-fields d-none">
+                                     <div class="form-group">
+                                         <label class="form-label fw-semibold" for="startTime2">
+                                             <i data-lucide="clock" style="width:16px;height:16px;"></i>
+                                             Start Time (2nd Session)
+                                         </label>
+                                         <div class="drop-field" data-field="startTime2">
+                                             <input type="time" class="form-control drop-target" id="startTime2" aria-label="Second session start time">
+                                         </div>
+                                     </div>
+
+                                     <div class="form-group">
+                                         <label class="form-label fw-semibold" for="endTime2">
+                                             <i data-lucide="clock" style="width:16px;height:16px;"></i>
+                                             End Time (2nd Session)
+                                         </label>
+                                         <div class="drop-field" data-field="endTime2">
+                                             <input type="time" class="form-control drop-target" id="endTime2" aria-label="Second session end time">
+                                         </div>
+                                     </div>
+                                 </div>
 
                                 <div class="form-group">
                                     <label class="form-label fw-semibold" for="room">
@@ -1236,6 +1277,19 @@
 
 <!-- Bootstrap -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Optional Supabase sync config
+     Fill these values in after creating your project and table.
+-->
+<script>
+window.SUPABASE_CONFIG = {
+    url: "https://lkhewsovasvhpxybibmb.supabase.co",
+    anonKey: "sb_publishable_7G86sIWm23iQlxwgRlMbEQ_RbRbWOjv",
+    table: "faculty_loading_state",
+    rowId: "main",
+    pollIntervalMs: 4000
+};
+</script>
 
 <!-- JavaScript -->
 <script src="script.js"></script>

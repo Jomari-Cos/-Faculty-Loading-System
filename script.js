@@ -16,74 +16,284 @@ const STORAGE_KEY_SUBJECTS = "facultyLoadingSystem.subjects";
 const STORAGE_KEY_ROOMS = "facultyLoadingSystem.rooms";
 
 // ===============================
-// localStorage Functions
+// Persistence Functions
 // ===============================
 
+const LOCAL_CACHE_KEY = "facultyLoadingSystem.cache";
+const SUPABASE_CONFIG = window.SUPABASE_CONFIG || {};
+const SUPABASE_URL = (SUPABASE_CONFIG.url || "").replace(/\/$/, "");
+const SUPABASE_ANON_KEY = SUPABASE_CONFIG.anonKey || "";
+const SUPABASE_TABLE = SUPABASE_CONFIG.table || "faculty_loading_state";
+const SUPABASE_ROW_ID = SUPABASE_CONFIG.rowId || "main";
+const REMOTE_POLL_INTERVAL_MS = Number(SUPABASE_CONFIG.pollIntervalMs || 4000);
+
+let remoteSyncTimer = null;
+let saveQueue = Promise.resolve();
+let remoteUpdatedAt = "";
+let suppressPersistenceDepth = 0;
+
+function isRemoteSyncEnabled() {
+    return Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
+}
+
+function getAppState() {
+    return {
+        loads,
+        sections,
+        subjects,
+        rooms
+    };
+}
+
+function applyAppState(state) {
+    loads = Array.isArray(state?.loads) ? state.loads : [];
+    sections = Array.isArray(state?.sections) ? state.sections : [];
+    subjects = Array.isArray(state?.subjects) ? state.subjects : [];
+    rooms = Array.isArray(state?.rooms) ? state.rooms : [];
+}
+
+function saveLocalCache() {
+    try {
+        localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify(getAppState()));
+    } catch {
+        // Ignore cache write failures so the app still works in private mode.
+    }
+}
+
+function loadLocalCache() {
+    try {
+        const saved = localStorage.getItem(LOCAL_CACHE_KEY);
+        if (!saved) {
+            const legacyLoads = localStorage.getItem(STORAGE_KEY_LOADS);
+            const legacySections = localStorage.getItem(STORAGE_KEY_SECTIONS);
+            const legacySubjects = localStorage.getItem(STORAGE_KEY_SUBJECTS);
+            const legacyRooms = localStorage.getItem(STORAGE_KEY_ROOMS);
+
+            if (!legacyLoads && !legacySections && !legacySubjects && !legacyRooms) {
+                return;
+            }
+
+            applyAppState({
+                loads: legacyLoads ? JSON.parse(legacyLoads) : [],
+                sections: legacySections ? JSON.parse(legacySections) : [],
+                subjects: legacySubjects ? JSON.parse(legacySubjects) : [],
+                rooms: legacyRooms ? JSON.parse(legacyRooms) : []
+            });
+
+            saveLocalCache();
+            return;
+        }
+
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === "object") {
+            applyAppState(parsed);
+        }
+    } catch {
+        applyAppState({});
+    }
+}
+
+function withPersistenceSuppressed(callback) {
+    suppressPersistenceDepth += 1;
+    try {
+        return callback();
+    } finally {
+        suppressPersistenceDepth -= 1;
+    }
+}
+
+function isPersistenceSuppressed() {
+    return suppressPersistenceDepth > 0;
+}
+
+function buildRemoteUrl() {
+    return `${SUPABASE_URL}/rest/v1/${encodeURIComponent(SUPABASE_TABLE)}`;
+}
+
+function getRemoteHeaders() {
+    return {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        "Content-Type": "application/json"
+    };
+}
+
+async function fetchRemoteState() {
+    if (!isRemoteSyncEnabled()) {
+        return null;
+    }
+
+    const response = await fetch(
+        `${buildRemoteUrl()}?select=state,updated_at&id=eq.${encodeURIComponent(SUPABASE_ROW_ID)}&limit=1`,
+        {
+            method: "GET",
+            headers: getRemoteHeaders()
+        }
+    );
+
+    if (!response.ok) {
+        throw new Error(`Failed to load remote data (${response.status})`);
+    }
+
+    const rows = await response.json();
+    const record = Array.isArray(rows) ? rows[0] : null;
+
+    if (!record || !record.state) {
+        return null;
+    }
+
+    return record;
+}
+
+async function pushRemoteState(state) {
+    if (!isRemoteSyncEnabled()) {
+        return;
+    }
+
+    const response = await fetch(buildRemoteUrl(), {
+        method: "POST",
+        headers: {
+            ...getRemoteHeaders(),
+            Prefer: "resolution=merge-duplicates,return=representation"
+        },
+        body: JSON.stringify({
+            id: SUPABASE_ROW_ID,
+            state,
+            updated_at: new Date().toISOString()
+        })
+    });
+
+    if (!response.ok) {
+        throw new Error(`Failed to save remote data (${response.status})`);
+    }
+
+    const rows = await response.json();
+    const record = Array.isArray(rows) ? rows[0] : null;
+    if (record?.updated_at) {
+        remoteUpdatedAt = record.updated_at;
+    }
+}
+
+function persistAppState() {
+    if (isPersistenceSuppressed()) {
+        return;
+    }
+
+    saveLocalCache();
+
+    if (!isRemoteSyncEnabled()) {
+        return;
+    }
+
+    const state = getAppState();
+
+    saveQueue = saveQueue
+        .then(() => pushRemoteState(state))
+        .catch(error => {
+            console.warn("Remote sync failed:", error);
+            showToast("Saved locally, but the Supabase sync failed.", "warning");
+        });
+
+    return saveQueue;
+}
+
 function saveLoads() {
-    localStorage.setItem(STORAGE_KEY_LOADS, JSON.stringify(loads));
+    return persistAppState();
 }
 
 function loadSavedLoads() {
-    try {
-        const saved = localStorage.getItem(STORAGE_KEY_LOADS);
-        if (!saved) return;
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-            loads = parsed;
-        }
-    } catch {
-        loads = [];
-    }
+    loadLocalCache();
 }
 
 function saveSections() {
-    localStorage.setItem(STORAGE_KEY_SECTIONS, JSON.stringify(sections));
+    return persistAppState();
 }
 
 function loadSavedSections() {
-    try {
-        const saved = localStorage.getItem(STORAGE_KEY_SECTIONS);
-        if (!saved) return;
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-            sections = parsed;
-        }
-    } catch {
-        sections = [];
-    }
+    loadLocalCache();
 }
 
 function saveSubjects() {
-    localStorage.setItem(STORAGE_KEY_SUBJECTS, JSON.stringify(subjects));
+    return persistAppState();
 }
 
 function loadSavedSubjects() {
-    try {
-        const saved = localStorage.getItem(STORAGE_KEY_SUBJECTS);
-        if (!saved) return;
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-            subjects = parsed;
-        }
-    } catch {
-        subjects = [];
-    }
+    loadLocalCache();
 }
 
 function saveRooms() {
-    localStorage.setItem(STORAGE_KEY_ROOMS, JSON.stringify(rooms));
+    return persistAppState();
 }
 
 function loadSavedRooms() {
+    loadLocalCache();
+}
+
+function renderAllViews() {
+    extractSectionsFromLoads();
+    renderTable();
+    renderSectionsTable();
+    renderSubjectsTable();
+    renderRoomsTable();
+    renderFacultyTable();
+    updateSummary();
+    updateDatalists();
+    renderSectionButtons();
+    lucide.createIcons();
+}
+
+async function syncFromSupabase() {
+    if (!isRemoteSyncEnabled()) {
+        return;
+    }
+
     try {
-        const saved = localStorage.getItem(STORAGE_KEY_ROOMS);
-        if (!saved) return;
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-            rooms = parsed;
+        const remoteRecord = await fetchRemoteState();
+
+        if (remoteRecord?.state) {
+            if (remoteRecord.updated_at && remoteRecord.updated_at === remoteUpdatedAt) {
+                return;
+            }
+
+            withPersistenceSuppressed(() => {
+                applyAppState(remoteRecord.state);
+                saveLocalCache();
+                renderAllViews();
+            });
+
+            remoteUpdatedAt = remoteRecord.updated_at || remoteUpdatedAt;
         }
-    } catch {
-        rooms = [];
+    } catch (error) {
+        console.warn("Remote sync read failed:", error);
+    }
+}
+
+async function initializeRemoteSync() {
+    if (!isRemoteSyncEnabled()) {
+        return;
+    }
+
+    try {
+        const remoteRecord = await fetchRemoteState();
+
+        if (remoteRecord?.state) {
+            withPersistenceSuppressed(() => {
+                applyAppState(remoteRecord.state);
+                saveLocalCache();
+            });
+
+            remoteUpdatedAt = remoteRecord.updated_at || remoteUpdatedAt;
+        } else {
+            await pushRemoteState(getAppState());
+        }
+
+        if (remoteSyncTimer) {
+            clearInterval(remoteSyncTimer);
+        }
+
+        remoteSyncTimer = setInterval(syncFromSupabase, REMOTE_POLL_INTERVAL_MS);
+    } catch (error) {
+        console.warn("Remote sync initialization failed:", error);
     }
 }
 
@@ -104,6 +314,11 @@ const startTime = document.getElementById("startTime");
 const endTime = document.getElementById("endTime");
 const room = document.getElementById("room");
 const units = document.getElementById("units");
+const hasBreakNo = document.getElementById("hasBreakNo");
+const hasBreakYes = document.getElementById("hasBreakYes");
+const startTime2 = document.getElementById("startTime2");
+const endTime2 = document.getElementById("endTime2");
+const breakSessionFields = document.querySelector(".break-session-fields");
 
 // Datalists
 const facultyList = document.getElementById("facultyList");
@@ -725,18 +940,52 @@ function checkConflict(newLoad, ignoreIndex = -1) {
 }
 
 // ===============================
+// Has a Break Toggle
+// ===============================
+
+function toggleBreakSessionFields() {
+    if (hasBreakYes && hasBreakYes.checked && breakSessionFields) {
+        breakSessionFields.classList.remove('d-none');
+        startTime2.required = true;
+        endTime2.required = true;
+    } else if (breakSessionFields) {
+        breakSessionFields.classList.add('d-none');
+        startTime2.required = false;
+        endTime2.required = false;
+        startTime2.value = "";
+        endTime2.value = "";
+    }
+}
+
+// ===============================
 // Form Submit
 // ===============================
 
 form.addEventListener("submit", function (e) {
     e.preventDefault();
 
+    // Validate first session times
     if (startTime.value >= endTime.value) {
         showToast("The end time must be later than the start time. Please adjust.", "error");
         startTime.focus();
         return;
     }
 
+    // Validate second session times if "Yes" is selected
+    if (hasBreakYes && hasBreakYes.checked) {
+        if (!startTime2.value || !endTime2.value) {
+            showToast("Please fill in both Start Time and End Time for the second session.", "error");
+            startTime2.focus();
+            return;
+        }
+        if (startTime2.value >= endTime2.value) {
+            showToast("The second session end time must be later than the start time. Please adjust.", "error");
+            startTime2.focus();
+            return;
+        }
+    }
+
+    // Create first load entry
     const newLoad = {
         faculty: faculty.value.trim(),
         section: section.value,
@@ -767,6 +1016,28 @@ form.addEventListener("submit", function (e) {
         showToast(`Entry updated successfully.`, "info");
     }
 
+    // If "Yes" is selected, create a second load entry for the second session
+    if (hasBreakYes && hasBreakYes.checked) {
+        const secondLoad = {
+            faculty: faculty.value.trim(),
+            section: section.value,
+            subject: subject.value,
+            day: day.value,
+            startTime: startTime2.value,
+            endTime: endTime2.value,
+            room: room.value || "",
+            units: units.value || ""
+        };
+
+        const secondConflict = checkConflict(secondLoad, -1);
+        if (secondConflict) {
+            showToast(secondConflict, "error");
+            return;
+        }
+
+        loads.push(secondLoad);
+    }
+
     saveLoads();
 
     // Keep Faculty and Section values, clear the rest
@@ -779,6 +1050,9 @@ form.addEventListener("submit", function (e) {
     endTime.value = "";
     room.value = "";
     units.value = "";
+    if (hasBreakNo) hasBreakNo.checked = true;
+    if (hasBreakYes) hasBreakYes.checked = false;
+    if (breakSessionFields) breakSessionFields.classList.add('d-none');
 
     faculty.value = facultyVal;
     section.value = sectionVal;
@@ -1334,10 +1608,6 @@ confirmReset.addEventListener("click", function () {
     sections = [];
     subjects = [];
     rooms = [];
-    localStorage.removeItem(STORAGE_KEY_LOADS);
-    localStorage.removeItem(STORAGE_KEY_SECTIONS);
-    localStorage.removeItem(STORAGE_KEY_SUBJECTS);
-    localStorage.removeItem(STORAGE_KEY_ROOMS);
 
     form.reset();
     sectionForm.reset();
@@ -1361,9 +1631,10 @@ confirmReset.addEventListener("click", function () {
     updateDatalists();
     renderSectionButtons();
 
-    bootstrap.Modal.getInstance(document.getElementById("resetModal")).hide();
-
-    showToast(`New semester started. All data has been cleared.`, "info");
+    Promise.resolve(persistAppState()).finally(() => {
+        bootstrap.Modal.getInstance(document.getElementById("resetModal")).hide();
+        showToast(`New semester started. All data has been cleared.`, "info");
+    });
 });
 
 // ===============================
@@ -2142,24 +2413,33 @@ if (facultySearchInput) {
 }
 
 // ===============================
+// Has a Break Radio Button Event Listeners
+// ===============================
+
+if (hasBreakNo) {
+    hasBreakNo.addEventListener("change", toggleBreakSessionFields);
+}
+if (hasBreakYes) {
+    hasBreakYes.addEventListener("change", toggleBreakSessionFields);
+}
+
+// ===============================
 // Initialize Lucide + App
 // ===============================
 
-loadSavedLoads();
-loadSavedSections();
-loadSavedSubjects();
-loadSavedRooms();
-lucide.createIcons();
-setupDropTargets();
-renderTable();
-renderSectionsTable();
-renderSubjectsTable();
-renderRoomsTable();
-updateSummary();
-updateDatalists();
-// Extract sections from existing loads on initialization
-extractSectionsFromLoads();
-renderSectionButtons();
+async function bootApp() {
+    loadSavedLoads();
+    loadSavedSections();
+    loadSavedSubjects();
+    loadSavedRooms();
+
+    await initializeRemoteSync();
+
+    setupDropTargets();
+    renderAllViews();
+}
+
+bootApp();
 
 // ===============================
 // User Manual Modal

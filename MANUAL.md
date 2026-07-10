@@ -333,9 +333,40 @@ Prof. Cruz,BSCpE 1st Year A,Calculus 1,Monday,09:30,11:00,Room 102,3
 ## Managing Your Data
 
 ### Data Persistence
-- All data is automatically saved to your browser's **local storage**
-- Data persists even after closing and reopening the browser
-- Data is specific to the browser and device you're using
+- By default, data is cached in your browser so the app can still open quickly offline
+- When Supabase is configured, the shared database becomes the main source of truth
+- Other devices will pick up changes on the next sync poll, so everyone sees the same schedule
+
+### Supabase Sync Setup
+1. Create a table named `faculty_loading_state` in Supabase
+2. Use this schema:
+
+```sql
+create table if not exists public.faculty_loading_state (
+   id text primary key,
+   state jsonb not null,
+   updated_at timestamptz not null default now()
+);
+```
+
+3. Add your project URL and anon key in the `SUPABASE_CONFIG` block inside `index.html`
+4. Keep `rowId` set to `main` if you want one shared timetable for all devices
+5. Make sure Row Level Security policies allow your anon key to read and write this table
+
+Example policy for a shared class project:
+
+```sql
+alter table public.faculty_loading_state enable row level security;
+
+create policy "Allow read access" on public.faculty_loading_state
+for select using (true);
+
+create policy "Allow write access" on public.faculty_loading_state
+for insert with check (true);
+
+create policy "Allow update access" on public.faculty_loading_state
+for update using (true) with check (true);
+```
 
 ### Starting a New Semester
 1. **Export** your current data as backup
@@ -344,8 +375,9 @@ Prof. Cruz,BSCpE 1st Year A,Calculus 1,Monday,09:30,11:00,Room 102,3
 4. All records will be cleared
 
 ### Data Recovery
-- If you accidentally reset, data recovery depends on your browser's local storage
-- Regular exports are recommended for important data
+- If Supabase sync is enabled, the reset is shared to every device using the same row
+- If you need to undo a reset, restore from an exported file or re-import the previous data
+- Regular exports are still recommended for important data
 
 ---
 
@@ -427,6 +459,11 @@ Prof. Cruz,BSCpE 1st Year A,Calculus 1,Monday,09:30,11:00,Room 102,3
 - **Cause**: Scheduling conflict detected
 - **Solution**: The faculty member already has a class at that time
 - **Action**: Choose a different time slot or day
+
+#### Remote sync is not updating other devices
+- **Cause**: Supabase URL/key are missing, or the RLS policies block access
+- **Solution**: Fill in `SUPABASE_CONFIG` and confirm the table policies allow read/write access
+- **Tip**: The app polls for changes every few seconds, so refresh delays are normal
 
 #### "has overlapping classes on [day]"
 - **Cause**: A section has two classes scheduled at the same time on the same day
