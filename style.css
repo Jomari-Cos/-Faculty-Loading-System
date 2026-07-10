@@ -1241,12 +1241,13 @@ body {
 }
 
 .sections-list-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    display: flex;
+    flex-wrap: wrap;
     gap: var(--gap-md);
     padding: var(--gap-md);
     max-height: 60vh;
     overflow-y: auto;
+    align-items: flex-start;
 }
 
 .section-buttons-container {
