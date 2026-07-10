@@ -1350,3 +1350,29 @@ body {
     letter-spacing: 2px;
     padding: 10px 0;
 }
+
+/* ===========================================
+   Break Session Fields
+   =========================================== */
+
+.break-radio-group {
+    display: flex;
+    gap: var(--gap-md);
+    padding: var(--gap-xs) 0;
+}
+
+.break-session-fields {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--gap-md);
+    margin-top: var(--gap-sm);
+    padding-top: var(--gap-sm);
+    border-top: 1px dashed var(--border-color);
+}
+
+@media(max-width:900px) {
+    .break-session-fields {
+        grid-template-columns: 1fr;
+    }
+}
+}
