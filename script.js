@@ -238,7 +238,7 @@ function renderAllViews() {
     renderFacultyTable();
     updateSummary();
     updateDatalists();
-    renderSectionButtons();
+    renderProgramButtons();
     lucide.createIcons();
 }
 
@@ -339,9 +339,14 @@ const totalSections = document.getElementById("totalSections");
 const totalSubjects = document.getElementById("totalSubjects");
 const totalRooms = document.getElementById("totalRooms");
 
-// Section Buttons
-const sectionButtonsContainer = document.getElementById("sectionButtonsContainer");
-const sectionCount = document.getElementById("sectionCount");
+// Program Buttons
+const programButtonsContainer = document.getElementById("programButtonsContainer");
+const programCount = document.getElementById("programCount");
+
+// Sections List Modal
+const sectionsListModal = new bootstrap.Modal(document.getElementById("sectionsListModal"));
+const sectionsListTitle = document.getElementById("sectionsListTitle");
+const sectionsListContainer = document.getElementById("sectionsListContainer");
 
 // Section Schedule Modal
 const sectionScheduleModal = new bootstrap.Modal(document.getElementById("sectionScheduleModal"));
@@ -869,10 +874,10 @@ function importRows(rows, fileName) {
     // Extract sections from imported loads
     extractSectionsFromLoads();
 
-    renderTable();
+renderTable();
     updateSummary();
     updateDatalists();
-    renderSectionButtons();
+    renderProgramButtons();
     lucide.createIcons();
 
     showToast(
@@ -1057,10 +1062,10 @@ form.addEventListener("submit", function (e) {
     faculty.value = facultyVal;
     section.value = sectionVal;
 
-    renderTable();
+renderTable();
     updateSummary();
     updateDatalists();
-    renderSectionButtons();
+    renderProgramButtons();
     lucide.createIcons();
 
     // Scroll back to form for next entry
@@ -1339,10 +1344,10 @@ confirmDelete.addEventListener("click", function () {
 
     deleteModal.hide();
 
-    renderTable();
+renderTable();
     updateSummary();
     updateDatalists();
-    renderSectionButtons();
+    renderProgramButtons();
     showToast(`"${deleted.faculty}" — ${deleted.subject} has been removed.`, "info");
 });
 
@@ -1487,30 +1492,82 @@ function renderSectionScheduleTable(sectionFullName) {
 // Render Section Buttons (Dashboard)
 // ===============================
 
-function renderSectionButtons() {
-    if (!sectionButtonsContainer) return;
+// ===============================
+// Render Program Buttons (Dashboard)
+// ===============================
 
-    // Update section count badge
-    if (sectionCount) {
-        sectionCount.textContent = `${sections.length} section${sections.length !== 1 ? 's' : ''}`;
+function renderProgramButtons() {
+    if (!programButtonsContainer) return;
+
+    // Get unique programs
+    const uniquePrograms = [...new Set(sections.map(s => s.program))].sort();
+
+    // Update program count badge
+    if (programCount) {
+        programCount.textContent = `${uniquePrograms.length} program${uniquePrograms.length !== 1 ? 's' : ''}`;
     }
 
     if (sections.length === 0) {
-        sectionButtonsContainer.innerHTML = `
-            <div class="empty-state-content" id="sectionButtonsEmpty">
+        programButtonsContainer.innerHTML = `
+            <div class="empty-state-content" id="programButtonsEmpty">
                 <img src="images/empty_state.png" alt="Empty state illustration" class="empty-state-image" />
-                <h4 class="text-muted">No sections added yet</h4>
+                <h4 class="text-muted">No programs added yet</h4>
                 <p class="text-muted small mb-1">
-                    Add sections in Section Management to see them here.
+                    Add sections in Section Management to see programs here.
                 </p>
             </div>
         `;
         return;
     }
 
-    sectionButtonsContainer.innerHTML = "";
+    programButtonsContainer.innerHTML = "";
 
-    sections.forEach((s, index) => {
+    uniquePrograms.forEach(program => {
+        // Count sections and loads for this program
+        const programSections = sections.filter(s => s.program === program);
+        const sectionCount = programSections.length;
+        const loadCount = loads.filter(l => programSections.some(s => s.fullName === l.section)).length;
+
+        const button = document.createElement("button");
+        button.className = "program-button";
+        button.innerHTML = `
+            <span class="program-name">${escapeHtml(program)}</span>
+            <span class="program-details">${sectionCount} section${sectionCount !== 1 ? 's' : ''}</span>
+            <span class="program-load-count">${loadCount} load${loadCount !== 1 ? 's' : ''}</span>
+        `;
+
+        // Add click handler to show sections list modal
+        button.addEventListener("click", function() {
+            // Format program display name
+            const programDisplay = program === "BSCpE" ? "BS COMPUTER ENGINEERING (BSCpE)" : program;
+            sectionsListTitle.textContent = `${programDisplay} Sections`;
+            renderSectionsList(program);
+            sectionsListModal.show();
+        });
+
+        programButtonsContainer.appendChild(button);
+    });
+}
+
+// ===============================
+// Render Sections List (Modal)
+// ===============================
+
+function renderSectionsList(program) {
+    if (!sectionsListContainer) return;
+
+    const programSections = sections.filter(s => s.program === program).sort((a, b) => {
+        // Sort by year then name
+        const yearOrder = ["1st Year", "2nd Year", "3rd Year", "4th Year", "5th Year"];
+        const yearA = yearOrder.indexOf(a.year) !== -1 ? yearOrder.indexOf(a.year) : 99;
+        const yearB = yearOrder.indexOf(b.year) !== -1 ? yearOrder.indexOf(b.year) : 99;
+        if (yearA !== yearB) return yearA - yearB;
+        return a.name.localeCompare(b.name);
+    });
+
+    sectionsListContainer.innerHTML = "";
+
+    programSections.forEach(s => {
         // Count loads for this section
         const loadCount = loads.filter(l => l.section === s.fullName).length;
 
@@ -1518,12 +1575,13 @@ function renderSectionButtons() {
         button.className = "section-button";
         button.innerHTML = `
             <span class="section-name">${escapeHtml(s.fullName)}</span>
-            <span class="section-details">${escapeHtml(s.program)} - ${escapeHtml(s.year)}</span>
+            <span class="section-details">${escapeHtml(s.year)}</span>
             <span class="section-load-count">${loadCount} load${loadCount !== 1 ? 's' : ''}</span>
         `;
 
-// Add click handler to show schedule modal
+        // Add click handler to show schedule modal
         button.addEventListener("click", function() {
+            sectionsListModal.hide();
             // Format: "BSCpE 1st Year A Schedule" or "BS COMPUTER ENGINEERING (BSCpE) 1st Year A Schedule"
             const programDisplay = s.program === "BSCpE" ? "BS COMPUTER ENGINEERING (BSCpE)" : s.program;
             sectionScheduleTitle.textContent = `${programDisplay} ${s.year} ${s.name} Schedule`;
@@ -1532,8 +1590,10 @@ function renderSectionButtons() {
             sectionScheduleModal.show();
         });
 
-        sectionButtonsContainer.appendChild(button);
+        sectionsListContainer.appendChild(button);
     });
+
+    lucide.createIcons();
 }
 
 // ===============================
@@ -1623,13 +1683,13 @@ confirmReset.addEventListener("click", function () {
     subjectBtnText.textContent = "Add Subject";
     if (roomBtnText) roomBtnText.textContent = "Add Room";
 
-    renderTable();
+renderTable();
     renderSectionsTable();
     renderSubjectsTable();
     renderRoomsTable();
     updateSummary();
     updateDatalists();
-    renderSectionButtons();
+    renderProgramButtons();
 
     Promise.resolve(persistAppState()).finally(() => {
         bootstrap.Modal.getInstance(document.getElementById("resetModal")).hide();
@@ -1825,10 +1885,10 @@ sectionForm.addEventListener("submit", function(e) {
 
     saveSections();
     sectionForm.reset();
-    renderSectionsTable();
+renderSectionsTable();
     updateDatalists();
     updateSummary();
-    renderSectionButtons();
+    renderProgramButtons();
 });
 
 sectionSearchInput.addEventListener("input", renderSectionsTable);
@@ -1866,12 +1926,12 @@ function deleteSection(index) {
     saveSubjects();
     saveLoads();
 
-    renderSectionsTable();
+renderSectionsTable();
     renderSubjectsTable();
     renderTable();
     updateDatalists();
     updateSummary();
-    renderSectionButtons();
+    renderProgramButtons();
 
     showToast(`Section "${deleted.fullName}" and ${subjectCount} associated subjects and ${loadCount} loads have been removed.`, "info");
 }
