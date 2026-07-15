@@ -239,6 +239,7 @@ function renderAllViews() {
     updateSummary();
     updateDatalists();
     renderProgramButtons();
+    renderRoomButtons();
     lucide.createIcons();
 }
 
@@ -2726,4 +2727,380 @@ function exportSectionSchedule(sectionFullName) {
     window.URL.revokeObjectURL(url);
 
     showToast(`Exported schedule for "${sectionFullName}" as Excel.`, "success");
+}
+
+// ===============================
+// Room Schedule Buttons
+// ===============================
+
+const roomScheduleButtonsContainer = document.getElementById("roomScheduleButtonsContainer");
+const roomScheduleCount = document.getElementById("roomScheduleCount");
+const roomScheduleTitle = document.getElementById("roomScheduleTitle");
+const roomScheduleTableBody = document.getElementById("roomScheduleTableBody");
+const roomScheduleModal = new bootstrap.Modal(document.getElementById("roomScheduleModal"));
+const exportRoomScheduleBtn = document.getElementById("exportRoomSchedule");
+let currentRoomName = "";
+
+function renderRoomButtons() {
+    if (!roomScheduleButtonsContainer) return;
+
+    // Count loads per room
+    const roomLoadCounts = {};
+    loads.forEach(l => {
+        if (l.room) {
+            roomLoadCounts[l.room] = (roomLoadCounts[l.room] || 0) + 1;
+        }
+    });
+
+    // Update room count badge
+    if (roomScheduleCount) {
+        roomScheduleCount.textContent = `${rooms.length} room${rooms.length !== 1 ? 's' : ''}`;
+    }
+
+    if (rooms.length === 0) {
+        roomScheduleButtonsContainer.innerHTML = `
+            <div class="empty-state-content" id="roomScheduleEmpty">
+                <img src="images/empty_state.png" alt="Empty state illustration" class="empty-state-image" />
+                <h4 class="text-muted">No rooms added yet</h4>
+                <p class="text-muted small mb-1">
+                    Add rooms in Room Management to see room schedules here.
+                </p>
+            </div>
+        `;
+        return;
+    }
+
+    roomScheduleButtonsContainer.innerHTML = "";
+
+    rooms.forEach(room => {
+        const loadCount = roomLoadCounts[room.name] || 0;
+
+        const button = document.createElement("button");
+        button.className = "room-schedule-button";
+        button.innerHTML = `
+            <span class="room-name">${escapeHtml(room.name)}</span>
+            <span class="room-details">Capacity: ${escapeHtml(room.capacity || '-')}</span>
+            <span class="room-load-count">${loadCount} load${loadCount !== 1 ? 's' : ''}</span>
+        `;
+
+        // Click handler to show room schedule modal
+        button.addEventListener("click", function() {
+            roomScheduleTitle.textContent = `${escapeHtml(room.name)} Schedule`;
+            currentRoomName = room.name;
+            renderRoomScheduleTable(room.name);
+            roomScheduleModal.show();
+        });
+
+        roomScheduleButtonsContainer.appendChild(button);
+    });
+
+    lucide.createIcons();
+}
+
+// ===============================
+// Render Room Schedule Table
+// ===============================
+
+function renderRoomScheduleTable(roomName) {
+    if (!roomScheduleTableBody) return;
+
+    // Time slots from 7:00 AM to 11:00 PM (index 5 = 12:00–1:00 PM is BREAK TIME)
+    const timeSlots = [
+        "7:00–8:00 AM", "8:00–9:00 AM", "9:00–10:00 AM", "10:00–11:00 AM",
+        "11:00–12:00 PM", "12:00–1:00 PM", "1:00–2:00 PM", "2:00–3:00 PM",
+        "3:00–4:00 PM", "4:00–5:00 PM", "5:00–6:00 PM", "6:00–7:00 PM",
+        "7:00–8:00 PM", "8:00–9:00 PM", "9:00–10:00 PM", "10:00–11:00 PM"
+    ];
+
+    const BREAK_TIME_INDEX = 5; // 12:00–1:00 PM
+    const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+    // Get loads for this room
+    const roomLoads = loads.filter(l => l.room === roomName);
+
+    // Pre-compute which loads are placed in each day+slot to handle rowspan merging
+    const dayLoadsPlaced = {};
+    days.forEach(day => { dayLoadsPlaced[day] = new Set(); });
+
+    // Build schedule grid
+    let tableHTML = "";
+
+    timeSlots.forEach((timeSlot, timeIndex) => {
+        tableHTML += `<tr>`;
+        tableHTML += `<td class="time-slot">${timeSlot}</td>`;
+
+        days.forEach(day => {
+            // 12:00–1:00 PM is BREAK TIME — render merged break cell
+            if (timeIndex === BREAK_TIME_INDEX) {
+                if (day === "Monday") {
+                    // Render a single cell spanning all 6 days
+                    tableHTML += `<td class="break-cell" colspan="6">
+                        <div class="break-time-content">
+                            <i data-lucide="coffee" style="width:18px;height:18px;"></i>
+                            BREAK TIME
+                        </div>
+                    </td>`;
+                }
+                return;
+            }
+
+            // Find loads for this time slot and day
+            const cellLoads = roomLoads.filter(l => {
+                const startHour = parseInt(l.startTime.split(':')[0]);
+                const endHour = parseInt(l.endTime.split(':')[0]);
+                const slotStartHour = timeIndex + 7;
+                const slotEndHour = timeIndex + 8;
+
+                return l.day === day && 
+                       ((startHour < slotEndHour && endHour > slotStartHour) ||
+                        (startHour <= slotStartHour && endHour >= slotEndHour));
+            });
+
+            if (cellLoads.length > 0) {
+                const load = cellLoads[0];
+                // Create a unique key for this load to track if already placed
+                const loadKey = load.faculty + '|' + load.subject + '|' + load.startTime + '|' + load.endTime;
+
+                if (dayLoadsPlaced[day].has(loadKey)) {
+                    // Already rendered this load in a previous time slot — skip (rowspan covers it)
+                    return;
+                }
+
+                // Mark this load as placed for this day
+                dayLoadsPlaced[day].add(loadKey);
+
+                // Calculate how many time slots this load spans (for rowspan)
+                const startHour = parseInt(load.startTime.split(':')[0]);
+                const endHour = parseInt(load.endTime.split(':')[0]);
+                const slotStartHour = timeIndex + 7;
+                const slotEndHour = timeIndex + 8;
+
+                // Count how many subsequent slots this load also occupies
+                let rowspan = 1;
+                for (let t = timeIndex + 1; t < timeSlots.length; t++) {
+                    if (t === BREAK_TIME_INDEX) continue; // skip break slot
+                    const nextSlotStart = t + 7;
+                    const nextSlotEnd = t + 8;
+                    if (startHour < nextSlotEnd && endHour > nextSlotStart) {
+                        rowspan++;
+                    } else {
+                        break;
+                    }
+                }
+
+                // Find subject code from subjects array
+                const matchedSubject = subjects.find(s => s.section === load.section && s.name === load.subject);
+                const subjectCode = matchedSubject ? matchedSubject.code : '';
+
+                const rowspanAttr = rowspan > 1 ? ` rowspan="${rowspan}"` : '';
+                tableHTML += `
+                    <td class="schedule-cell"${rowspanAttr}>
+                        <div class="schedule-item">
+                            <div class="schedule-faculty">${escapeHtml(load.faculty)}</div>
+                            <div class="schedule-subject-code">${escapeHtml(subjectCode || '')}</div>
+                            <div class="schedule-subject">${escapeHtml(load.subject)}</div>
+                            <div class="schedule-time">${load.startTime} - ${load.endTime}</div>
+                            <div class="schedule-section">${escapeHtml(load.section)}</div>
+                        </div>
+                    </td>
+                `;
+            } else {
+                tableHTML += `<td class="empty-cell"></td>`;
+            }
+        });
+
+        tableHTML += `</tr>`;
+    });
+
+    roomScheduleTableBody.innerHTML = tableHTML;
+    lucide.createIcons();
+}
+
+// ===============================
+// Export Room Schedule to XLSX
+// ===============================
+
+if (exportRoomScheduleBtn) {
+    exportRoomScheduleBtn.addEventListener("click", function() {
+        exportRoomSchedule(currentRoomName);
+    });
+}
+
+function exportRoomSchedule(roomName) {
+    const roomLoads = loads.filter(l => l.room === roomName);
+
+    if (roomLoads.length === 0) {
+        showToast("No loads to export for this room.", "info");
+        return;
+    }
+
+    const title = `${roomName} Schedule`;
+
+    // Time slots from 7:00 AM to 11:00 PM
+    const timeSlots = [
+        "7:00–8:00 AM", "8:00–9:00 AM", "9:00–10:00 AM", "10:00–11:00 AM",
+        "11:00–12:00 PM", "12:00–1:00 PM", "1:00–2:00 PM", "2:00–3:00 PM",
+        "3:00–4:00 PM", "4:00–5:00 PM", "5:00–6:00 PM", "6:00–7:00 PM",
+        "7:00–8:00 PM", "8:00–9:00 PM", "9:00–10:00 PM", "10:00–11:00 PM"
+    ];
+
+    const BREAK_TIME_INDEX = 5;
+    const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+    const data = [];
+    const merges = [];
+
+    // Row 1: Merged title row
+    const headerRow = [title];
+    for (let i = 1; i <= 6; i++) headerRow.push("");
+    data.push(headerRow);
+
+    // Row 2: Column headers
+    data.push(["TIME", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"]);
+
+    // Track which cells have been placed
+    const dayLoadsPlaced = {};
+    days.forEach(day => { dayLoadsPlaced[day] = new Set(); });
+
+    // Data rows
+    timeSlots.forEach((timeSlot, timeIndex) => {
+        const row = [timeSlot];
+
+        days.forEach(day => {
+            if (timeIndex === BREAK_TIME_INDEX) {
+                if (day === "Monday") {
+                    for (let d = 0; d < 6; d++) {
+                        row.push(d === 0 ? "BREAK TIME" : "");
+                    }
+                }
+                return;
+            }
+
+            const cellLoads = roomLoads.filter(l => {
+                const startHour = parseInt(l.startTime.split(':')[0]);
+                const endHour = parseInt(l.endTime.split(':')[0]);
+                const slotStartHour = timeIndex + 7;
+                const slotEndHour = timeIndex + 8;
+
+                return l.day === day && 
+                       ((startHour < slotEndHour && endHour > slotStartHour) ||
+                        (startHour <= slotStartHour && endHour >= slotEndHour));
+            });
+
+            if (cellLoads.length > 0) {
+                const load = cellLoads[0];
+                const loadKey = load.faculty + '|' + load.subject + '|' + load.startTime + '|' + load.endTime;
+
+                if (dayLoadsPlaced[day].has(loadKey)) {
+                    row.push("");
+                    return;
+                }
+
+                dayLoadsPlaced[day].add(loadKey);
+
+                const startHour = parseInt(load.startTime.split(':')[0]);
+                const endHour = parseInt(load.endTime.split(':')[0]);
+
+                let rowspan = 1;
+                for (let t = timeIndex + 1; t < timeSlots.length; t++) {
+                    if (t === BREAK_TIME_INDEX) continue;
+                    const nextSlotStart = t + 7;
+                    const nextSlotEnd = t + 8;
+                    if (startHour < nextSlotEnd && endHour > nextSlotStart) {
+                        rowspan++;
+                    } else {
+                        break;
+                    }
+                }
+
+                const matchedSubject = subjects.find(s => s.section === load.section && s.name === load.subject);
+                const subjectCode = matchedSubject ? matchedSubject.code : '';
+                let cellContent = load.faculty + "\n" + (subjectCode || '') + "\n" + load.subject + "\n" + load.startTime + "-" + load.endTime + "\n" + load.section;
+                row.push(cellContent);
+
+                if (rowspan > 1) {
+                    const dayColIndex = days.indexOf(day) + 1;
+                    const currentRow = data.length;
+                    merges.push({ s: { r: currentRow, c: dayColIndex }, e: { r: currentRow + rowspan - 1, c: dayColIndex } });
+                }
+            } else {
+                row.push("");
+            }
+        });
+
+        data.push(row);
+    });
+
+    // Create workbook and worksheet using SheetJS
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(data);
+
+    // Merge title cell and BREAK TIME row
+    const breakTimeRow = 1 + 1 + BREAK_TIME_INDEX;
+    merges.push(
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } },
+        { s: { r: breakTimeRow, c: 1 }, e: { r: breakTimeRow, c: 6 } }
+    );
+    ws['!merges'] = merges;
+
+    // Style the title row
+    for (let c = 0; c < 7; c++) {
+        const cellRef = XLSX.utils.encode_cell({ r: 0, c });
+        if (ws[cellRef]) {
+            ws[cellRef].s = {
+                font: { bold: true, sz: 14 },
+                alignment: { horizontal: 'center', vertical: 'center', wrapText: true }
+            };
+        }
+    }
+
+    // Style header row
+    for (let c = 0; c < 7; c++) {
+        const cellRef = XLSX.utils.encode_cell({ r: 1, c });
+        if (ws[cellRef]) {
+            ws[cellRef].s = {
+                font: { bold: true, sz: 11 },
+                alignment: { horizontal: 'center', vertical: 'center', wrapText: true }
+            };
+        }
+    }
+
+    // Style BREAK TIME row
+    for (let c = 0; c < 7; c++) {
+        const cellRef = XLSX.utils.encode_cell({ r: breakTimeRow, c });
+        if (ws[cellRef]) {
+            ws[cellRef].s = {
+                font: { bold: true, sz: 12, color: { rgb: "E65100" } },
+                alignment: { horizontal: 'center', vertical: 'center', wrapText: true }
+            };
+        }
+    }
+
+    // Auto-fit column widths
+    const colWidths = [14, 22, 22, 22, 22, 22, 22];
+    ws['!cols'] = colWidths.map(w => ({ wch: w }));
+
+    // Set row heights
+    ws['!rows'] = [];
+    ws['!rows'][0] = { hpx: 40 };
+    for (let i = 2; i < data.length; i++) {
+        ws['!rows'][i] = { hpx: 80 };
+    }
+
+    XLSX.utils.book_append_sheet(wb, ws, "Room Schedule");
+
+    // Generate Excel file and trigger download
+    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = `${roomName.replace(/\s+/g, '_')}_Schedule.xlsx`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+
+    showToast(`Exported schedule for "${roomName}" as Excel.`, "success");
 }

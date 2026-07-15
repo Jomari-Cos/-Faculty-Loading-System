@@ -1415,6 +1415,150 @@ body {
 }
 
 /* ===========================================
+   Room Schedule Modal Table
+   =========================================== */
+
+#roomScheduleTable {
+    table-layout: auto;
+    width: 100%;
+}
+
+#roomScheduleTable th {
+    background: #00695c;
+    color: white;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 10px 6px;
+    border: 1px solid #e0e3e8;
+    width: auto;
+}
+
+#roomScheduleTable td {
+    padding: 8px 6px;
+    font-size: 0.75rem;
+    border: 1px solid #e0e3e8;
+    vertical-align: middle;
+    height: 60px;
+    width: auto;
+}
+
+#roomScheduleTable td.time-slot {
+    background: #f8f9fa;
+    font-weight: 500;
+    color: #00695c;
+    font-size: 0.7rem;
+    width: 110px;
+    white-space: nowrap;
+}
+
+#roomScheduleTable td.schedule-cell {
+    background: #e0f2f1;
+}
+
+#roomScheduleTable td.schedule-cell .schedule-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    text-align: center;
+}
+
+#roomScheduleTable td.schedule-cell .schedule-subject {
+    font-weight: 600;
+    color: #004d40;
+    font-size: 0.75rem;
+}
+
+#roomScheduleTable td.schedule-cell .schedule-subject-code {
+    font-weight: 500;
+    color: #00695c;
+    font-size: 0.65rem;
+}
+
+#roomScheduleTable td.schedule-cell .schedule-faculty {
+    color: #00695c;
+    font-size: 0.68rem;
+}
+
+#roomScheduleTable td.schedule-cell .schedule-time {
+    color: #6c757d;
+    font-size: 0.65rem;
+}
+
+#roomScheduleTable td.schedule-cell .schedule-section {
+    color: #e65100;
+    font-size: 0.62rem;
+}
+
+#roomScheduleTable td.empty-cell {
+    background: #ffffff;
+}
+
+#roomScheduleTable tbody tr:nth-of-type(even) td.time-slot {
+    background: #f1f3f4;
+}
+
+#roomScheduleTable tbody tr:nth-of-type(even) td.schedule-cell {
+    background: #d0ece8;
+}
+
+#roomScheduleTable tbody tr:nth-of-type(even) td.empty-cell {
+    background: #f8f9fa;
+}
+
+/* Break Time Cell in Room Schedule */
+#roomScheduleTable td.break-cell {
+    background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+    text-align: center;
+    vertical-align: middle;
+    border: 2px dashed #ff9800;
+}
+
+/* Room Button Styles (Room Schedule Card) */
+.room-schedule-button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--gap-sm);
+    padding: var(--gap-md);
+    background: linear-gradient(135deg, #00695c, #00897b);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+    transition: var(--transition);
+    box-shadow: var(--shadow-sm);
+}
+
+.room-schedule-button:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+    opacity: 0.95;
+}
+
+.room-schedule-button .room-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.room-schedule-button .room-details {
+    font-size: 0.75rem;
+    opacity: 0.9;
+}
+
+.room-schedule-button .room-load-count {
+    font-size: 0.7rem;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 2px 8px;
+    border-radius: 12px;
+}
+
+/* ===========================================
    Break Session Fields
    =========================================== */
 
