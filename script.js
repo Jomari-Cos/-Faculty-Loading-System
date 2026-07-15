@@ -3102,5 +3102,34 @@ function exportRoomSchedule(roomName) {
     document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
 
-    showToast(`Exported schedule for "${roomName}" as Excel.`, "success");
+showToast(`Exported schedule for "${roomName}" as Excel.`, "success");
 }
+
+// ===============================
+// Sidebar Mobile Overlay Handler
+// ===============================
+
+const sidebarOverlay = document.getElementById("sidebarOverlay");
+
+// Toggle sidebar on mobile menu button click
+if (sidebarToggle) {
+    sidebarToggle.addEventListener("click", function() {
+        sidebar.classList.toggle("show");
+    });
+}
+
+// Close sidebar when overlay is clicked
+if (sidebarOverlay) {
+    sidebarOverlay.addEventListener("click", function() {
+        sidebar.classList.remove("show");
+    });
+}
+
+// Close sidebar when nav items are clicked (mobile only)
+navItems.forEach(item => {
+    item.addEventListener("click", function() {
+        if (window.innerWidth <= 900) {
+            sidebar.classList.remove("show");
+        }
+    });
+});
