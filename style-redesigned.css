@@ -131,27 +131,20 @@ body {
 }
 
 /* ===========================================
-   App Layout — CSS Grid
+   App Layout — Flexbox
    =========================================== */
 
 .app-layout {
-    display: grid;
-    grid-template-columns: var(--sidebar-width-desktop) 1fr;
+    display: flex;
     min-height: 100vh;
-    transition: grid-template-columns var(--transition-normal);
 }
 
 /* ===========================================
-   Sidebar — Fixed Width & Height
+   Sidebar — Part of Main Content
    =========================================== */
 
 .sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
     width: var(--sidebar-width-desktop);
-    height: 100vh;
-    height: 100dvh;
     background: var(--color-sidebar-bg);
     border-right: 1px solid var(--color-sidebar-border);
     display: flex;
@@ -160,27 +153,11 @@ body {
     padding: var(--space-lg) var(--space-md);
     overflow-y: auto;
     overflow-x: hidden;
-    z-index: 1000;
-    transition: width var(--transition-normal);
     flex-shrink: 0;
 }
 
 .sidebar-overlay {
     display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 999;
-    opacity: 0;
-    transition: opacity var(--transition-normal);
-}
-
-.sidebar.show + .sidebar-overlay {
-    display: block;
-    opacity: 1;
 }
 
 /* Sidebar Header */
@@ -279,9 +256,10 @@ body {
    =========================================== */
 
 .main-content {
-    grid-column: 2;
-    padding: var(--space-xl) var(--space-xl) var(--space-xl) 0;
+    flex: 1;
+    padding: var(--space-xl);
     min-height: 100vh;
+    overflow-y: auto;
 }
 
 /* ===========================================
@@ -917,6 +895,158 @@ body {
 }
 
 /* ===========================================
+   Schedule Tables (Section & Room)
+   =========================================== */
+
+#sectionScheduleTable,
+#roomScheduleTable {
+    table-layout: auto;
+    width: 100%;
+}
+
+#sectionScheduleTable th,
+#roomScheduleTable th {
+    background: var(--color-primary);
+    color: white;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 10px 6px;
+    border: 1px solid var(--color-border);
+    width: auto;
+}
+
+#sectionScheduleTable th {
+    background: var(--color-secondary);
+}
+
+#roomScheduleTable th {
+    background: #00695c;
+}
+
+#sectionScheduleTable td,
+#roomScheduleTable td {
+    padding: 8px 6px;
+    font-size: 0.75rem;
+    border: 1px solid var(--color-border);
+    vertical-align: middle;
+    height: 60px;
+    width: auto;
+}
+
+#sectionScheduleTable td.time-slot,
+#roomScheduleTable td.time-slot {
+    background: var(--color-background);
+    font-weight: 500;
+    color: var(--color-text-primary);
+    font-size: 0.7rem;
+    width: 110px;
+    white-space: nowrap;
+}
+
+#roomScheduleTable td.time-slot {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+}
+
+/* Schedule Cell - Solid border with light subtle background */
+#sectionScheduleTable td.schedule-cell,
+#roomScheduleTable td.schedule-cell {
+    background: var(--color-background);
+    border: 1px solid var(--color-border);
+}
+
+#sectionScheduleTable td.schedule-cell .schedule-item,
+#roomScheduleTable td.schedule-cell .schedule-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    text-align: center;
+    background: var(--color-surface);
+    border-radius: var(--radius-sm);
+    padding: 4px 6px;
+}
+
+#sectionScheduleTable td.schedule-cell .schedule-subject,
+#roomScheduleTable td.schedule-cell .schedule-subject {
+    font-weight: 600;
+    color: var(--color-primary);
+    font-size: 0.75rem;
+}
+
+#sectionScheduleTable td.schedule-cell .schedule-faculty,
+#roomScheduleTable td.schedule-cell .schedule-faculty {
+    color: var(--color-secondary);
+    font-size: 0.68rem;
+}
+
+#sectionScheduleTable td.schedule-cell .schedule-time,
+#roomScheduleTable td.schedule-cell .schedule-time {
+    color: var(--color-text-muted);
+    font-size: 0.65rem;
+}
+
+#roomScheduleTable td.schedule-cell .schedule-section {
+    color: var(--color-warning);
+    font-size: 0.62rem;
+}
+
+#roomScheduleTable td.schedule-cell .schedule-subject-code {
+    font-weight: 500;
+    color: #00695c;
+    font-size: 0.65rem;
+}
+
+#roomScheduleTable td.schedule-cell .schedule-room {
+    color: #00695c;
+    font-size: 0.62rem;
+}
+
+#sectionScheduleTable td.empty-cell,
+#roomScheduleTable td.empty-cell {
+    background: var(--color-surface);
+}
+
+#sectionScheduleTable tbody tr:nth-of-type(even) td.time-slot,
+#roomScheduleTable tbody tr:nth-of-type(even) td.time-slot {
+    background: rgba(0, 0, 0, 0.03);
+}
+
+#sectionScheduleTable tbody tr:nth-of-type(even) td.schedule-cell,
+#roomScheduleTable tbody tr:nth-of-type(even) td.schedule-cell {
+    background: rgba(0, 0, 0, 0.02);
+}
+
+#sectionScheduleTable tbody tr:nth-of-type(even) td.empty-cell,
+#roomScheduleTable tbody tr:nth-of-type(even) td.empty-cell {
+    background: var(--color-background);
+}
+
+/* Break Time Cell */
+#sectionScheduleTable td.break-cell,
+#roomScheduleTable td.break-cell {
+    background: linear-gradient(135deg, rgba(255, 152, 0, 0.1), rgba(255, 152, 0, 0.05));
+    text-align: center;
+    vertical-align: middle;
+    border: 2px dashed var(--color-warning);
+}
+
+.break-time-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--color-warning);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    padding: 10px 0;
+}
+
+/* ===========================================
    Responsive Design
    =========================================== */
 
@@ -927,7 +1057,7 @@ body {
     }
     
     .main-content {
-        padding-left: calc(var(--sidebar-width-tablet) + var(--space-xl));
+        padding: var(--space-xl);
     }
     
     .stats-row {
@@ -938,19 +1068,17 @@ body {
 /* Mobile/Tablet */
 @media (max-width: 900px) {
     .app-layout {
-        grid-template-columns: 1fr;
+        flex-direction: column;
     }
     
     .sidebar {
-        position: fixed;
-        left: -240px;
-        width: var(--sidebar-width-desktop);
-        transition: left var(--transition-normal);
-        box-shadow: var(--shadow-xl);
-    }
-    
-    .sidebar.show {
-        left: 0;
+        position: relative;
+        width: 100%;
+        height: auto;
+        box-shadow: var(--shadow-sm);
+        z-index: 1;
+        border-right: none;
+        border-bottom: 1px solid var(--color-sidebar-border);
     }
     
     .main-content {
@@ -958,7 +1086,7 @@ body {
     }
     
     .mobile-menu-btn {
-        display: inline-flex;
+        display: none;
     }
     
     .form-row-custom {
