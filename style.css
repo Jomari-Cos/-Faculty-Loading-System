@@ -50,7 +50,6 @@ body {
 .app-layout {
     display: grid;
     grid-template-columns: 240px 1fr;
-    gap: var(--section-gap);
     min-height: 100vh;
 }
 
@@ -65,8 +64,8 @@ body {
 .sidebar {
     display: flex;
     flex-direction: column;
-    gap: var(--gap-md);
-    padding: var(--gap-lg) var(--gap-md);
+    gap: 0;
+    padding: var(--gap-lg) 0;
     background: var(--bg-white);
     border-right: 1px solid var(--border-color);
     height: 100%;
@@ -1343,7 +1342,14 @@ body {
 }
 
 #sectionScheduleTable td.schedule-cell {
-    background: #e8f5e9;
+    background: #f8fafc;
+    border: 2px solid #cbd5e1;
+}
+
+#sectionScheduleTable td.schedule-cell .schedule-item {
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: 6px;
+    padding: 4px 6px;
 }
 
 #sectionScheduleTable td.schedule-cell .schedule-item {
@@ -1383,7 +1389,7 @@ body {
 }
 
 #sectionScheduleTable tbody tr:nth-of-type(even) td.schedule-cell {
-    background: #e0f0e0;
+    background: #f1f5f9;
 }
 
 #sectionScheduleTable tbody tr:nth-of-type(even) td.empty-cell {
@@ -1496,7 +1502,8 @@ body {
 }
 
 #roomScheduleTable td.schedule-cell {
-    background: #e0f2f1;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
 }
 
 #roomScheduleTable td.schedule-cell .schedule-item {
@@ -1542,7 +1549,7 @@ body {
 }
 
 #roomScheduleTable tbody tr:nth-of-type(even) td.schedule-cell {
-    background: #d0ece8;
+    background: #f1f5f9;
 }
 
 #roomScheduleTable tbody tr:nth-of-type(even) td.empty-cell {
