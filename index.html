@@ -30,9 +30,12 @@
     <!-- ========================= -->
 
     <nav class="sidebar" id="sidebar">
-        <div class="sidebar-header">
+<div class="sidebar-header">
             <i data-lucide="graduation-cap" style="width:28px;height:28px;"></i>
             <span class="sidebar-title">Faculty Loading</span>
+            <button class="sidebar-collapse-btn" id="sidebarCollapseBtn" aria-label="Toggle sidebar">
+                <i data-lucide="menu" style="width:18px;height:18px;"></i>
+            </button>
         </div>
 
         <div class="sidebar-nav">
@@ -67,9 +70,9 @@
                 <i data-lucide="book" style="width:18px;height:18px;"></i>
                 <span>User Manual</span>
             </a>
-            <button class="btn btn-sm text-white w-100" style="background:#c62828;" data-bs-toggle="modal" data-bs-target="#resetModal" title="Start a new semester">
+<button class="btn btn-sm text-white w-100" style="background:#c62828;" data-bs-toggle="modal" data-bs-target="#resetModal" title="Start a new semester">
                 <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
-                Reset Semester
+                <span>Reset Semester</span>
             </button>
         </div>
     </nav>
@@ -78,8 +81,12 @@
     <!-- Main Content -->
     <!-- ========================= -->
 
-    <!-- Sidebar Overlay for Mobile -->
-    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+<!-- Sidebar Overlay for Mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay">
+        <button class="btn btn-light rounded-circle p-2" id="overlayCloseBtn" aria-label="Close sidebar" style="position: absolute; top: 20px; right: 20px; display: none;">
+            <i data-lucide="x" style="width:20px;height:20px;"></i>
+        </button>
+    </div>
 
     <div class="main-content">
 

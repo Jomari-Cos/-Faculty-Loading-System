@@ -372,6 +372,7 @@ const cancelFormBtn = document.getElementById("cancelFormBtn");
 // Navigation
 const sidebarToggle = document.getElementById("sidebarToggle");
 const sidebar = document.getElementById("sidebar");
+const sidebarOverlay = document.getElementById("sidebarOverlay");
 const navItems = document.querySelectorAll(".nav-item[data-view]");
 const viewContainers = document.querySelectorAll(".view-container");
 const manageSectionsBtn = document.getElementById("manageSectionsBtn");
@@ -469,9 +470,12 @@ function switchView(viewName) {
         targetView.classList.remove('d-none');
     }
 
-    // Close sidebar on mobile
+// Close sidebar on mobile
     if (window.innerWidth <= 900) {
         sidebar.classList.remove('show');
+        if (sidebarOverlay) {
+            sidebarOverlay.classList.remove('show');
+        }
     }
 
     // Update icons
@@ -2145,7 +2149,27 @@ navItems.forEach(item => {
 
 sidebarToggle.addEventListener("click", function() {
     sidebar.classList.toggle('show');
+    if (sidebarOverlay) {
+        sidebarOverlay.classList.toggle('show');
+    }
 });
+
+// Close sidebar when overlay is clicked
+if (sidebarOverlay) {
+    sidebarOverlay.addEventListener("click", function() {
+        sidebar.classList.remove('show');
+        sidebarOverlay.classList.remove('show');
+    });
+}
+
+// Close button in overlay
+const overlayCloseBtn = document.getElementById("overlayCloseBtn");
+if (overlayCloseBtn) {
+    overlayCloseBtn.addEventListener("click", function() {
+        sidebar.classList.remove('show');
+        sidebarOverlay.classList.remove('show');
+    });
+}
 
 manageSectionsBtn.addEventListener("click", function() {
     switchView('sections');
@@ -3106,30 +3130,26 @@ showToast(`Exported schedule for "${roomName}" as Excel.`, "success");
 }
 
 // ===============================
-// Sidebar Mobile Overlay Handler
+// Sidebar Collapse Toggle
 // ===============================
 
-const sidebarOverlay = document.getElementById("sidebarOverlay");
+const sidebarCollapseBtn = document.getElementById("sidebarCollapseBtn");
 
-// Toggle sidebar on mobile menu button click
-if (sidebarToggle) {
-    sidebarToggle.addEventListener("click", function() {
-        sidebar.classList.toggle("show");
-    });
-}
-
-// Close sidebar when overlay is clicked
-if (sidebarOverlay) {
-    sidebarOverlay.addEventListener("click", function() {
-        sidebar.classList.remove("show");
-    });
-}
-
-// Close sidebar when nav items are clicked (mobile only)
-navItems.forEach(item => {
-    item.addEventListener("click", function() {
+// Toggle sidebar collapse state
+if (sidebarCollapseBtn) {
+    sidebarCollapseBtn.addEventListener("click", function() {
         if (window.innerWidth <= 900) {
-            sidebar.classList.remove("show");
+            // Mobile: toggle show/hide
+            sidebar.classList.toggle("show");
+            if (sidebarOverlay) {
+                sidebarOverlay.classList.toggle("show");
+            }
+        } else {
+            // Desktop: toggle collapse/expand
+            sidebar.classList.toggle("collapsed");
+            const isCollapsed = sidebar.classList.contains("collapsed");
+            localStorage.setItem("sidebarCollapsed", isCollapsed);
         }
+        lucide.createIcons();
     });
-});
+}
