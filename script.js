@@ -372,6 +372,7 @@ const cancelFormBtn = document.getElementById("cancelFormBtn");
 // Navigation
 const sidebarToggle = document.getElementById("sidebarToggle");
 const sidebar = document.getElementById("sidebar");
+const sidebarOverlay = document.getElementById("sidebarOverlay");
 const navItems = document.querySelectorAll(".nav-item[data-view]");
 const viewContainers = document.querySelectorAll(".view-container");
 const manageSectionsBtn = document.getElementById("manageSectionsBtn");
@@ -469,9 +470,12 @@ function switchView(viewName) {
         targetView.classList.remove('d-none');
     }
 
-    // Close sidebar on mobile
+// Close sidebar on mobile
     if (window.innerWidth <= 900) {
         sidebar.classList.remove('show');
+        if (sidebarOverlay) {
+            sidebarOverlay.classList.remove('show');
+        }
     }
 
     // Update icons
@@ -2145,7 +2149,27 @@ navItems.forEach(item => {
 
 sidebarToggle.addEventListener("click", function() {
     sidebar.classList.toggle('show');
+    if (sidebarOverlay) {
+        sidebarOverlay.classList.toggle('show');
+    }
 });
+
+// Close sidebar when overlay is clicked
+if (sidebarOverlay) {
+    sidebarOverlay.addEventListener("click", function() {
+        sidebar.classList.remove('show');
+        sidebarOverlay.classList.remove('show');
+    });
+}
+
+// Close button in overlay
+const overlayCloseBtn = document.getElementById("overlayCloseBtn");
+if (overlayCloseBtn) {
+    overlayCloseBtn.addEventListener("click", function() {
+        sidebar.classList.remove('show');
+        sidebarOverlay.classList.remove('show');
+    });
+}
 
 manageSectionsBtn.addEventListener("click", function() {
     switchView('sections');
@@ -3106,35 +3130,6 @@ showToast(`Exported schedule for "${roomName}" as Excel.`, "success");
 }
 
 // ===============================
-// Sidebar Mobile Overlay Handler
-// ===============================
-
-const sidebarOverlay = document.getElementById("sidebarOverlay");
-
-// Toggle sidebar on mobile menu button click
-if (sidebarToggle) {
-    sidebarToggle.addEventListener("click", function() {
-        sidebar.classList.toggle("show");
-    });
-}
-
-// Close sidebar when overlay is clicked
-if (sidebarOverlay) {
-    sidebarOverlay.addEventListener("click", function() {
-        sidebar.classList.remove("show");
-    });
-}
-
-// Close sidebar when nav items are clicked (mobile only)
-navItems.forEach(item => {
-    item.addEventListener("click", function() {
-        if (window.innerWidth <= 900) {
-            sidebar.classList.remove("show");
-        }
-    });
-});
-
-// ===============================
 // Sidebar Collapse Toggle
 // ===============================
 
@@ -3143,42 +3138,18 @@ const sidebarCollapseBtn = document.getElementById("sidebarCollapseBtn");
 // Toggle sidebar collapse state
 if (sidebarCollapseBtn) {
     sidebarCollapseBtn.addEventListener("click", function() {
-        sidebar.classList.toggle("collapsed");
-        
-        // Toggle button icon direction
-        const icon = sidebarCollapseBtn.querySelector("i");
-        if (sidebar.classList.contains("collapsed")) {
-            sidebarCollapseBtn.classList.add("collapsed");
+        if (window.innerWidth <= 900) {
+            // Mobile: toggle show/hide
+            sidebar.classList.toggle("show");
+            if (sidebarOverlay) {
+                sidebarOverlay.classList.toggle("show");
+            }
         } else {
-            sidebarCollapseBtn.classList.remove("collapsed");
+            // Desktop: toggle collapse/expand
+            sidebar.classList.toggle("collapsed");
+            const isCollapsed = sidebar.classList.contains("collapsed");
+            localStorage.setItem("sidebarCollapsed", isCollapsed);
         }
-        
-        // Re-render icons to update the chevron rotation
         lucide.createIcons();
     });
-}
-
-// Check if sidebar should be collapsed on load (from localStorage)
-function loadSidebarState() {
-    const isCollapsed = localStorage.getItem("sidebarCollapsed") === "true";
-    if (isCollapsed && sidebar) {
-        sidebar.classList.add("collapsed");
-        if (sidebarCollapseBtn) {
-            sidebarCollapseBtn.classList.add("collapsed");
-        }
-    }
-}
-
-// Save sidebar state to localStorage
-function saveSidebarState() {
-    const isCollapsed = sidebar.classList.contains("collapsed");
-    localStorage.setItem("sidebarCollapsed", isCollapsed);
-}
-
-// Initialize sidebar state
-loadSidebarState();
-
-// Save state when toggled
-if (sidebarCollapseBtn) {
-    sidebarCollapseBtn.addEventListener("click", saveSidebarState);
 }
