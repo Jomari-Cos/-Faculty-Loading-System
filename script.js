@@ -3133,3 +3133,52 @@ navItems.forEach(item => {
         }
     });
 });
+
+// ===============================
+// Sidebar Collapse Toggle
+// ===============================
+
+const sidebarCollapseBtn = document.getElementById("sidebarCollapseBtn");
+
+// Toggle sidebar collapse state
+if (sidebarCollapseBtn) {
+    sidebarCollapseBtn.addEventListener("click", function() {
+        sidebar.classList.toggle("collapsed");
+        
+        // Toggle button icon direction
+        const icon = sidebarCollapseBtn.querySelector("i");
+        if (sidebar.classList.contains("collapsed")) {
+            sidebarCollapseBtn.classList.add("collapsed");
+        } else {
+            sidebarCollapseBtn.classList.remove("collapsed");
+        }
+        
+        // Re-render icons to update the chevron rotation
+        lucide.createIcons();
+    });
+}
+
+// Check if sidebar should be collapsed on load (from localStorage)
+function loadSidebarState() {
+    const isCollapsed = localStorage.getItem("sidebarCollapsed") === "true";
+    if (isCollapsed && sidebar) {
+        sidebar.classList.add("collapsed");
+        if (sidebarCollapseBtn) {
+            sidebarCollapseBtn.classList.add("collapsed");
+        }
+    }
+}
+
+// Save sidebar state to localStorage
+function saveSidebarState() {
+    const isCollapsed = sidebar.classList.contains("collapsed");
+    localStorage.setItem("sidebarCollapsed", isCollapsed);
+}
+
+// Initialize sidebar state
+loadSidebarState();
+
+// Save state when toggled
+if (sidebarCollapseBtn) {
+    sidebarCollapseBtn.addEventListener("click", saveSidebarState);
+}
