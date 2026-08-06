@@ -691,6 +691,16 @@
                                 </div>
                             </div>
 
+                            <div class="form-group">
+                                <label class="form-label fw-semibold" for="mappingCourses">
+                                    <i data-lucide="book-open" style="width:16px;height:16px;"></i>
+                                    Courses Taught
+                                </label>
+                                <textarea class="form-control" id="mappingCourses" rows="3"
+                                          placeholder="e.g. BSCpE 311 – Electric Circuits, BSECE 422 – Power Systems,..."
+                                          aria-label="Courses taught"></textarea>
+                            </div>
+
 
                             <div class="form-actions">
                                 <button type="submit" class="btn btn-lg text-white"
@@ -746,18 +756,22 @@
                                aria-label="Faculty mapping table">
                             <thead>
                                 <tr>
-                                    <th scope="col" width="60">No.</th>
-                                    <th scope="col">Name</th>
-                                    <th scope="col">Specialization</th>
+                                    <th scope="col" width="60" rowspan="2" style="vertical-align:middle;">No.</th>
+                                    <th scope="col" rowspan="2" style="vertical-align:middle;">Name</th>
+                                    <th scope="col" rowspan="2" style="vertical-align:middle;">Specialization</th>
+                                    <th scope="col" colspan="4" class="text-center" style="border-bottom: 1px solid rgba(255,255,255,0.3);">Educational Background</th>
+                                    <th scope="col" width="120" rowspan="2" style="vertical-align:middle;">Actions</th>
+                                </tr>
+                                <tr>
                                     <th scope="col">Bachelor's Degree</th>
                                     <th scope="col">Master's Degree</th>
                                     <th scope="col">Doctorate Degree</th>
-                                    <th scope="col" width="120">Actions</th>
+                                    <th scope="col">Courses Taught</th>
                                 </tr>
                             </thead>
                             <tbody id="mappingTableBody">
                                 <tr id="mappingEmptyState">
-                                    <td colspan="7" class="text-muted py-4">
+                                    <td colspan="8" class="text-muted py-4">
                                         No faculty mapping added yet. Add your first faculty above or import from Excel.
                                     </td>
                                 </tr>
