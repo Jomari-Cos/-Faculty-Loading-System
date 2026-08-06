@@ -6,6 +6,7 @@ let loads = [];
 let sections = [];
 let subjects = [];
 let rooms = [];
+let facultyMapping = [];
 let deleteIndex = -1;
 let sortColumn = null;
 let sortDirection = 'asc';
@@ -14,6 +15,7 @@ const STORAGE_KEY_LOADS = "facultyLoadingSystem.loads";
 const STORAGE_KEY_SECTIONS = "facultyLoadingSystem.sections";
 const STORAGE_KEY_SUBJECTS = "facultyLoadingSystem.subjects";
 const STORAGE_KEY_ROOMS = "facultyLoadingSystem.rooms";
+const STORAGE_KEY_MAPPING = "facultyLoadingSystem.mapping";
 
 // ===============================
 // Persistence Functions
@@ -40,7 +42,8 @@ function getAppState() {
         loads,
         sections,
         subjects,
-        rooms
+        rooms,
+        facultyMapping
     };
 }
 
@@ -49,6 +52,7 @@ function applyAppState(state) {
     sections = Array.isArray(state?.sections) ? state.sections : [];
     subjects = Array.isArray(state?.subjects) ? state.subjects : [];
     rooms = Array.isArray(state?.rooms) ? state.rooms : [];
+    facultyMapping = Array.isArray(state?.facultyMapping) ? state.facultyMapping : [];
 }
 
 function saveLocalCache() {
@@ -142,6 +146,7 @@ async function pushRemoteState(state) {
     updates[`${FIREBASE_PATH}/sections`] = state.sections;
     updates[`${FIREBASE_PATH}/subjects`] = state.subjects;
     updates[`${FIREBASE_PATH}/rooms`] = state.rooms;
+    updates[`${FIREBASE_PATH}/facultyMapping`] = state.facultyMapping;
     updates[`${FIREBASE_METADATA_PATH}/updated_at`] = timestamp;
     updates[`${FIREBASE_METADATA_PATH}/row_id`] = FIREBASE_ROW_ID;
 
@@ -180,6 +185,14 @@ function loadSavedLoads() {
     loadLocalCache();
 }
 
+function saveMapping() {
+    return persistAppState();
+}
+
+function loadSavedMapping() {
+    loadLocalCache();
+}
+
 function saveSections() {
     return persistAppState();
 }
@@ -211,6 +224,7 @@ function renderAllViews() {
     renderSubjectsTable();
     renderRoomsTable();
     renderFacultyTable();
+    renderMappingTable();
     updateSummary();
     updateDatalists();
     renderProgramButtons();
@@ -330,6 +344,7 @@ const sectionsTableBody = document.getElementById("sectionsTableBody");
 const subjectsTableBody = document.getElementById("subjectsTableBody");
 const roomsTableBody = document.getElementById("roomsTableBody");
 const facultyTableBody = document.getElementById("facultyTableBody");
+const mappingTableBody = document.getElementById("mappingTableBody");
 
 // Summary
 const totalLoads = document.getElementById("totalLoads");
@@ -377,6 +392,7 @@ const manageSectionsBtn = document.getElementById("manageSectionsBtn");
 const manageSubjectsBtn = document.getElementById("manageSubjectsBtn");
 const manageRoomsBtn = document.getElementById("manageRoomsBtn");
 const navFaculty = document.getElementById("navFaculty");
+const navMapping = document.getElementById("navMapping");
 const navRooms = document.getElementById("navRooms");
 
 // Section Management
@@ -411,6 +427,22 @@ const roomSearchInput = document.getElementById("roomSearchInput");
 
 // Faculty List
 const facultySearchInput = document.getElementById("facultySearchInput");
+
+// Faculty Mapping
+const mappingForm = document.getElementById("mappingForm");
+const mappingName = document.getElementById("mappingName");
+const mappingSpecialization = document.getElementById("mappingSpecialization");
+const mappingBachelors = document.getElementById("mappingBachelors");
+const mappingMasters = document.getElementById("mappingMasters");
+const mappingDoctorate = document.getElementById("mappingDoctorate");
+const editMappingIndex = document.getElementById("editMappingIndex");
+const mappingBtnText = document.getElementById("mappingBtnText");
+const cancelMappingBtn = document.getElementById("cancelMappingBtn");
+const mappingSearchInput = document.getElementById("mappingSearchInput");
+const importMappingBtn = document.getElementById("importMappingBtn");
+const mappingImportInput = document.getElementById("mappingImportInput");
+const exportMappingBtn = document.getElementById("exportMappingBtn");
+const mappingDropZone = document.getElementById("mappingDropZone");
 
 // Search & Filter
 const searchInput = document.getElementById("searchInput");
@@ -1676,20 +1708,24 @@ confirmReset.addEventListener("click", function () {
     sectionForm.reset();
     subjectForm.reset();
     if (roomForm) roomForm.reset();
+    if (mappingForm) mappingForm.reset();
     editIndex.value = "";
     editSectionIndex.value = "";
     editSubjectIndex.value = "";
     if (editRoomIndex) editRoomIndex.value = "";
+    if (editMappingIndex) editMappingIndex.value = "";
     submitBtnText.textContent = "Add Load";
     submitBtn.title = "Add this schedule entry (Ctrl + Enter)";
     sectionBtnText.textContent = "Add Section";
     subjectBtnText.textContent = "Add Subject";
     if (roomBtnText) roomBtnText.textContent = "Add Room";
+    if (mappingBtnText) mappingBtnText.textContent = "Add Faculty";
 
 renderTable();
     renderSectionsTable();
     renderSubjectsTable();
     renderRoomsTable();
+    renderMappingTable();
     updateSummary();
     updateDatalists();
     renderProgramButtons();
@@ -2196,6 +2232,22 @@ if (navFaculty) {
         switchView('faculty');
         renderFacultyTable();
     });
+if (navFaculty) {
+    navFaculty.addEventListener("click", function(e) {
+        e.preventDefault();
+        switchView('faculty');
+        renderFacultyTable();
+    });
+}
+
+if (navMapping) {
+    navMapping.addEventListener("click", function(e) {
+        e.preventDefault();
+        switchView('mapping');
+        renderMappingTable();
+    });
+}
+
 }
 
 // ===============================
@@ -2434,8 +2486,319 @@ function deleteRoom(index) {
 }
 
 // ===============================
-// Faculty List
+// Faculty Mapping
 // ===============================
+
+function renderMappingTable() {
+    const query = mappingSearchInput.value.trim().toLowerCase();
+
+    const filtered = facultyMapping.filter(m =>
+        m.name.toLowerCase().includes(query) ||
+        m.specialization.toLowerCase().includes(query) ||
+        (m.bachelors && m.bachelors.toLowerCase().includes(query)) ||
+        (m.masters && m.masters.toLowerCase().includes(query)) ||
+        (m.doctorate && m.doctorate.toLowerCase().includes(query))
+    );
+
+    if (facultyMapping.length === 0) {
+        mappingTableBody.innerHTML = `
+            <tr id="mappingEmptyState">
+                <td colspan="7" class="text-muted py-4">
+                    No faculty mapping added yet. Add your first faculty above or import from Excel.
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    if (filtered.length === 0 && facultyMapping.length > 0) {
+        mappingTableBody.innerHTML = `
+            <tr>
+                <td colspan="7" class="text-muted py-4">
+                    <i data-lucide="search" style="width:16px;height:16px;"></i>
+                    No records match your search. Try different keywords or clear the filter.
+                </td>
+            </tr>
+        `;
+        lucide.createIcons();
+        return;
+    }
+
+    mappingTableBody.innerHTML = "";
+
+    filtered.forEach((mapping, index) => {
+        const originalIndex = facultyMapping.indexOf(mapping);
+        mappingTableBody.innerHTML += `
+            <tr>
+                <td>${index + 1}</td>
+                <td><strong>${escapeHtml(mapping.name)}</strong></td>
+                <td>${escapeHtml(mapping.specialization)}</td>
+                <td style="white-space: pre-wrap; text-align: left;">${escapeHtml(mapping.bachelors || '-')}</td>
+                <td style="white-space: pre-wrap; text-align: left;">${escapeHtml(mapping.masters || '-')}</td>
+                <td style="white-space: pre-wrap; text-align: left;">${escapeHtml(mapping.doctorate || '-')}</td>
+                <td>
+                    <button class="btn btn-warning btn-sm action-btn" onclick="editMapping(${originalIndex})" title="Edit this record">
+                        <i data-lucide="pencil" style="width:14px;height:14px;"></i>
+                    </button>
+                    <button class="btn btn-danger btn-sm action-btn" onclick="deleteMapping(${originalIndex})" title="Delete this record">
+                        <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+
+    lucide.createIcons();
+}
+
+mappingForm.addEventListener("submit", function(e) {
+    e.preventDefault();
+
+    const name = mappingName.value.trim();
+    const specialization = mappingSpecialization.value.trim();
+    const bachelors = mappingBachelors.value.trim();
+    const masters = mappingMasters.value.trim();
+    const doctorate = mappingDoctorate.value.trim();
+
+    if (!name || !specialization) {
+        showToast("Faculty name and specialization are required.", "error");
+        return;
+    }
+
+    const mappingData = {
+        name,
+        specialization,
+        bachelors,
+        masters,
+        doctorate
+    };
+
+    if (editMappingIndex.value === "") {
+        facultyMapping.push(mappingData);
+        showToast(`Faculty "${name}" has been added.`, "success");
+    } else {
+        facultyMapping[editMappingIndex.value] = mappingData;
+        editMappingIndex.value = "";
+        mappingBtnText.textContent = "Add Faculty";
+        showToast(`Faculty updated successfully.`, "info");
+    }
+
+    saveMapping();
+    mappingForm.reset();
+    renderMappingTable();
+    updateSummary();
+});
+
+cancelMappingBtn.addEventListener("click", function() {
+    mappingForm.reset();
+    editMappingIndex.value = "";
+    mappingBtnText.textContent = "Add Faculty";
+});
+
+function editMapping(index) {
+    const m = facultyMapping[index];
+    mappingName.value = m.name;
+    mappingSpecialization.value = m.specialization;
+    mappingBachelors.value = m.bachelors || "";
+    mappingMasters.value = m.masters || "";
+    mappingDoctorate.value = m.doctorate || "";
+    editMappingIndex.value = index;
+    mappingBtnText.textContent = "Update Faculty";
+    mappingForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function deleteMapping(index) {
+    const deleted = facultyMapping[index];
+    facultyMapping.splice(index, 1);
+
+    saveMapping();
+    renderMappingTable();
+    updateSummary();
+
+    showToast(`Faculty "${deleted.name}" has been removed.`, "info");
+}
+
+
+// ===============================
+// Import/Export Faculty Mapping
+// ===============================
+
+importMappingBtn.addEventListener("click", function() {
+    mappingImportInput.click();
+});
+
+mappingImportInput.addEventListener("change", function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    processMappingImportFile(file);
+    mappingImportInput.value = "";
+});
+
+function processMappingImportFile(file) {
+    const reader = new FileReader();
+    const fileName = file.name;
+
+    if (file.name.toLowerCase().endsWith(".csv")) {
+        reader.onload = function(e) {
+            const text = e.target.result;
+            const rows = parseCSV(text);
+            if (rows.length < 2) {
+                showToast("That file doesn't have a header row with data.", "error");
+                return;
+            }
+            importMappingRows(rows, fileName);
+        };
+        reader.readAsText(file);
+    } else if (file.name.toLowerCase().endsWith(".xlsx") || file.name.toLowerCase().endsWith(".xls")) {
+        reader.onload = function(e) {
+            try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: "array" });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const json = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+                if (json.length < 2) {
+                    showToast("That file doesn't have a header row with data.", "error");
+                    return;
+                }
+                importMappingRows(json, fileName);
+            } catch (err) {
+                showToast("Couldn't read that Excel file.", "error");
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    } else {
+        showToast("Unsupported file type. Please use .csv, .xlsx, or .xls files.", "error");
+    }
+}
+
+function importMappingRows(rows, fileName) {
+    const headers = rows[0].map(h => h.toString().toLowerCase().trim());
+    
+    const nameIdx = headers.findIndex(h => h.includes("name"));
+    const specIdx = headers.findIndex(h => h.includes("specialization") || h.includes("specialisation"));
+    const bachelorsIdx = headers.findIndex(h => h.includes("bachelor"));
+    const mastersIdx = headers.findIndex(h => h.includes("master"));
+    const doctorateIdx = headers.findIndex(h => h.includes("doctorate") || h.includes("doctor"));
+
+    if (nameIdx === -1) {
+        showToast("Could not find 'Name' column in the file.", "error");
+        return;
+    }
+
+    let addedCount = 0;
+    let skippedCount = 0;
+
+    for (let r = 1; r < rows.length; r++) {
+        const row = rows[r];
+        if (!row || row.every(cell => !cell || cell.toString().trim() === "")) continue;
+
+        const name = row[nameIdx] ? row[nameIdx].toString().trim() : "";
+        if (!name) {
+            skippedCount++;
+            continue;
+        }
+
+        const mappingData = {
+            name: name,
+            specialization: specIdx !== -1 && row[specIdx] ? row[specIdx].toString().trim() : "",
+            bachelors: bachelorsIdx !== -1 && row[bachelorsIdx] ? row[bachelorsIdx].toString().trim() : "",
+            masters: mastersIdx !== -1 && row[mastersIdx] ? row[mastersIdx].toString().trim() : "",
+            doctorate: doctorateIdx !== -1 && row[doctorateIdx] ? row[doctorateIdx].toString().trim() : ""
+        };
+
+        facultyMapping.push(mappingData);
+        addedCount++;
+    }
+
+    saveMapping();
+    renderMappingTable();
+    updateSummary();
+
+    showToast(
+        `Imported ${addedCount} record${addedCount !== 1 ? 's' : ''} from "${fileName}".${skippedCount > 0 ? ` Skipped ${skippedCount} invalid rows.` : ''}`,
+        "success"
+    );
+}
+
+
+exportMappingBtn.addEventListener("click", function() {
+    if (facultyMapping.length === 0) {
+        showToast("Nothing to export yet. Add some records first.", "error");
+        return;
+    }
+
+    const data = [
+        ["Name", "Specialization", "Bachelor's Degree", "Master's Degree", "Doctorate Degree"]
+    ];
+
+    facultyMapping.forEach(m => {
+        data.push([
+            m.name,
+            m.specialization,
+            m.bachelors || "",
+            m.masters || "",
+            m.doctorate || ""
+        ]);
+    });
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(data);
+
+    const colWidths = data[0].map((_, colIndex) => {
+        let maxLen = 0;
+        data.forEach(row => {
+            const cellLen = String(row[colIndex] || '').length;
+            if (cellLen > maxLen) maxLen = cellLen;
+        });
+        return { wch: Math.max(maxLen + 2, 15) };
+    });
+    ws['!cols'] = colWidths;
+
+    XLSX.utils.book_append_sheet(wb, ws, "Faculty Mapping");
+
+    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = "Faculty_Mapping.xlsx";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+
+    showToast(`Exported ${facultyMapping.length} record${facultyMapping.length !== 1 ? 's' : ''} as "Faculty_Mapping.xlsx".`, "success");
+});
+
+// ===============================
+// Drag and Drop for Faculty Mapping
+// ===============================
+
+mappingDropZone.addEventListener("dragover", function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    mappingDropZone.classList.add("drag-over");
+});
+
+mappingDropZone.addEventListener("dragleave", function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    mappingDropZone.classList.remove("drag-over");
+});
+
+mappingDropZone.addEventListener("drop", function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    mappingDropZone.classList.remove("drag-over");
+
+    const file = e.dataTransfer.files[0];
+    if (!file) return;
+    processMappingImportFile(file);
+});
+
+
+mappingSearchInput.addEventListener("input", renderMappingTable);
 
 function renderFacultyTable() {
     const query = facultySearchInput.value.trim().toLowerCase();
@@ -2515,6 +2878,7 @@ async function bootApp() {
     loadSavedSections();
     loadSavedSubjects();
     loadSavedRooms();
+    loadSavedMapping();
 
     await initializeRemoteSync();
 

@@ -59,6 +59,10 @@
             <i data-lucide="badge-check" style="width:18px;height:18px;"></i>
             <span>Faculty List</span>
         </a>
+        <a href="#" class="nav-item" data-view="mapping" id="navMapping">
+            <i data-lucide="user-check" style="width:18px;height:18px;"></i>
+            <span>Faculty Mapping</span>
+        </a>
         <a href="#" class="nav-item" data-view="loading" id="navLoading">
             <i data-lucide="clipboard-list" style="width:18px;height:18px;"></i>
             <span>Faculty Loading</span>
@@ -610,6 +614,160 @@
 
                 </div>
             </div>
+        </div>
+
+        <!-- ========================= -->
+        <!-- Faculty Mapping View -->
+        <!-- ========================= -->
+
+        <div class="view-container d-none" id="mappingView">
+
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-header text-white rounded-top-4 d-flex align-items-center gap-2"
+                     style="background:linear-gradient(135deg,#6a1b9a,#9c27b0);">
+                    <i data-lucide="user-check" style="width:18px;height:18px;"></i>
+                    Faculty Mapping
+                </div>
+
+                <div class="card-body">
+
+                    <!-- Faculty Mapping Form -->
+                    <form id="mappingForm" class="mb-4">
+                        <input type="hidden" id="editMappingIndex">
+
+                        <div class="form-fields">
+                            <div class="form-row-custom">
+                                <div class="form-group">
+                                    <label class="form-label fw-semibold" for="mappingName">
+                                        <i data-lucide="user" style="width:16px;height:16px;"></i>
+                                        Faculty Name
+                                    </label>
+                                    <input type="text" class="form-control" id="mappingName"
+                                           required placeholder="e.g. Aranaz, Francis Fajardo"
+                                           aria-label="Faculty name">
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label fw-semibold" for="mappingSpecialization">
+                                        <i data-lucide="bookmark" style="width:16px;height:16px;"></i>
+                                        Specialization
+                                    </label>
+                                    <input type="text" class="form-control" id="mappingSpecialization"
+                                           required placeholder="e.g. General Engineering/Electrical Engineering"
+                                           aria-label="Specialization">
+                                </div>
+                            </div>
+
+
+                            <div class="form-row-custom">
+                                <div class="form-group">
+                                    <label class="form-label fw-semibold" for="mappingBachelors">
+                                        <i data-lucide="graduation-cap" style="width:16px;height:16px;"></i>
+                                        Bachelor's Degree
+                                    </label>
+                                    <textarea class="form-control" id="mappingBachelors" rows="4"
+                                              placeholder="e.g. Bachelor of Science in Electrical Engineering&#10;National University&#10;2008"
+                                              aria-label="Bachelor's degree"></textarea>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label fw-semibold" for="mappingMasters">
+                                        <i data-lucide="award" style="width:16px;height:16px;"></i>
+                                        Master's Degree
+                                    </label>
+                                    <textarea class="form-control" id="mappingMasters" rows="4"
+                                              placeholder="e.g. Master of Technician Education&#10;Marikina Polytechnic College&#10;2015"
+                                              aria-label="Master's degree"></textarea>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label fw-semibold" for="mappingDoctorate">
+                                        <i data-lucide="star" style="width:16px;height:16px;"></i>
+                                        Doctorate Degree
+                                    </label>
+                                    <textarea class="form-control" id="mappingDoctorate" rows="4"
+                                              placeholder="e.g. Doctor of Philosophy in Engineering&#10;University of the Philippines&#10;2020"
+                                              aria-label="Doctorate degree"></textarea>
+                                </div>
+                            </div>
+
+
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-lg text-white"
+                                        id="addMappingBtn"
+                                        style="background:linear-gradient(135deg,#6a1b9a,#9c27b0);">
+                                    <i data-lucide="plus-circle" style="width:20px;height:20px;"></i>
+                                    <span id="mappingBtnText">Add Faculty</span>
+                                </button>
+                                <button type="button" class="btn btn-lg btn-outline-secondary" id="cancelMappingBtn">
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+
+
+                    <!-- Search & Actions -->
+                    <div class="search-bar mb-3">
+                        <div class="search-input-group">
+                            <i data-lucide="search" style="width:16px;height:16px;color:#6c757d;flex-shrink:0;"></i>
+                            <input type="text" class="search-input" id="mappingSearchInput"
+                                   placeholder="Search faculty mapping..." aria-label="Search faculty mapping">
+                        </div>
+
+                        <div class="search-actions">
+                            <input type="file" id="mappingImportInput" accept=".csv,.xlsx,.xls" style="display:none;" aria-label="Upload CSV or Excel file">
+                            <button class="btn btn-sm text-white" style="background:#6a1b9a;" id="importMappingBtn" title="Browse or drag & drop a CSV or Excel file">
+                                <i data-lucide="upload" style="width:14px;height:14px;"></i>
+                                Import
+                            </button>
+                            <button class="btn btn-sm text-white" style="background:#2e7d32;" id="exportMappingBtn" title="Download all records as Excel">
+                                <i data-lucide="download" style="width:14px;height:14px;"></i>
+                                Export
+                            </button>
+                        </div>
+                    </div>
+
+
+                    <!-- File Drop Zone -->
+                    <div class="file-drop-zone mb-3" id="mappingDropZone">
+                        <div class="file-drop-content">
+                            <i data-lucide="file-spreadsheet" style="width:48px;height:48px;color:#6a1b9a;"></i>
+                            <h5 class="fw-semibold" style="color:#6a1b9a;">Drop your file here</h5>
+                            <p class="text-muted small">Supports: .csv, .xlsx, .xls</p>
+                        </div>
+                    </div>
+
+                    <!-- Faculty Mapping Table -->
+                    <div class="table-responsive rounded-4">
+                        <table class="table align-middle text-center mb-0"
+                               id="mappingTable"
+                               role="grid"
+                               aria-label="Faculty mapping table">
+                            <thead>
+                                <tr>
+                                    <th scope="col" width="60">No.</th>
+                                    <th scope="col">Name</th>
+                                    <th scope="col">Specialization</th>
+                                    <th scope="col">Bachelor's Degree</th>
+                                    <th scope="col">Master's Degree</th>
+                                    <th scope="col">Doctorate Degree</th>
+                                    <th scope="col" width="120">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="mappingTableBody">
+                                <tr id="mappingEmptyState">
+                                    <td colspan="7" class="text-muted py-4">
+                                        No faculty mapping added yet. Add your first faculty above or import from Excel.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+            </div>
+
         </div>
 
         <!-- ========================= -->

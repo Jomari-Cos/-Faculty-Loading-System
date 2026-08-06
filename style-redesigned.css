@@ -935,6 +935,32 @@ body {
     display: flex;
 }
 
+/* Faculty Mapping — always-visible drop zone */
+#mappingDropZone {
+    display: flex;
+    position: relative;
+    inset: auto;
+    z-index: auto;
+    pointer-events: auto;
+    padding: var(--space-xl) var(--space-md);
+    background: linear-gradient(135deg, rgba(106, 27, 154, 0.04), rgba(156, 39, 176, 0.04));
+    border: 2px dashed var(--color-primary);
+    border-radius: var(--radius-xl);
+    transition: background 0.2s ease, border-color 0.2s ease;
+    cursor: pointer;
+}
+
+#mappingDropZone.drag-over {
+    background: rgba(106, 27, 154, 0.1);
+    border-color: var(--color-primary);
+}
+
+@media (max-width: 600px) {
+    #mappingDropZone {
+        padding: var(--space-md);
+    }
+}
+
 .file-drop-content {
     display: flex;
     flex-direction: column;
