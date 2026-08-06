@@ -2,7 +2,7 @@
   // Import the functions you need from the SDKs you need
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
   import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-analytics.js";
-  import { getDatabase } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-database.js";
+  import { getDatabase, ref, get, update, onValue, off } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-database.js";
 
   // Your web app's Firebase configuration
   // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -22,6 +22,11 @@
   const analytics = getAnalytics(app);
   const database = getDatabase(app);
 
-  // Make database globally accessible for script.js
+  // Expose database and helper functions globally for script.js (modular SDK API)
   window.firebaseDatabase = database;
+  window.firebaseRef = ref;
+  window.firebaseGet = get;
+  window.firebaseUpdate = update;
+  window.firebaseOnValue = onValue;
+  window.firebaseOff = off;
 </script>

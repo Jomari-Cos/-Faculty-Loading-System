@@ -113,26 +113,20 @@ async function fetchRemoteState() {
     }
 
     const db = window.firebaseDatabase;
-    return new Promise((resolve, reject) => {
-        db.ref(`${FIREBASE_PATH}`).once('value')
-            .then((snapshot) => {
-                const state = snapshot.val();
-                if (!state) {
-                    resolve(null);
-                    return;
-                }
+    const snapshot = await window.firebaseGet(window.firebaseRef(db, FIREBASE_PATH));
+    const state = snapshot.val();
+    if (!state) {
+        return null;
+    }
 
-                db.ref(`${FIREBASE_METADATA_PATH}/updated_at`).once('value')
-                    .then((metaSnapshot) => {
-                        resolve({
-                            state: state,
-                            updated_at: metaSnapshot.val()
-                        });
-                    })
-                    .catch(reject);
-            })
-            .catch(reject);
-    });
+    const metaSnapshot = await window.firebaseGet(
+        window.firebaseRef(db, `${FIREBASE_METADATA_PATH}/updated_at`)
+    );
+
+    return {
+        state: state,
+        updated_at: metaSnapshot.val()
+    };
 }
 
 async function pushRemoteState(state) {
@@ -143,22 +137,16 @@ async function pushRemoteState(state) {
     const db = window.firebaseDatabase;
     const timestamp = new Date().toISOString();
 
-    return new Promise((resolve, reject) => {
-        const updates = {};
-        updates[`${FIREBASE_PATH}/loads`] = state.loads;
-        updates[`${FIREBASE_PATH}/sections`] = state.sections;
-        updates[`${FIREBASE_PATH}/subjects`] = state.subjects;
-        updates[`${FIREBASE_PATH}/rooms`] = state.rooms;
-        updates[`${FIREBASE_METADATA_PATH}/updated_at`] = timestamp;
-        updates[`${FIREBASE_METADATA_PATH}/row_id`] = FIREBASE_ROW_ID;
+    const updates = {};
+    updates[`${FIREBASE_PATH}/loads`] = state.loads;
+    updates[`${FIREBASE_PATH}/sections`] = state.sections;
+    updates[`${FIREBASE_PATH}/subjects`] = state.subjects;
+    updates[`${FIREBASE_PATH}/rooms`] = state.rooms;
+    updates[`${FIREBASE_METADATA_PATH}/updated_at`] = timestamp;
+    updates[`${FIREBASE_METADATA_PATH}/row_id`] = FIREBASE_ROW_ID;
 
-        db.ref().update(updates)
-            .then(() => {
-                remoteUpdatedAt = timestamp;
-                resolve();
-            })
-            .catch(reject);
-    });
+    await window.firebaseUpdate(window.firebaseRef(db), updates);
+    remoteUpdatedAt = timestamp;
 }
 
 function persistAppState() {
@@ -278,16 +266,18 @@ async function initializeRemoteSync() {
 
         /* Set up real-time listener for changes (replaces polling) */
         if (remoteSyncListener) {
-            remoteSyncListener.off();
+            window.firebaseOff(remoteSyncListener);
         }
 
         const db = window.firebaseDatabase;
-        remoteSyncListener = db.ref(FIREBASE_PATH);
-        remoteSyncListener.on('value', async (snapshot) => {
+        remoteSyncListener = window.firebaseRef(db, FIREBASE_PATH);
+        window.firebaseOnValue(remoteSyncListener, async (snapshot) => {
             const state = snapshot.val();
             if (!state) return;
 
-            const metaSnapshot = await db.ref(`${FIREBASE_METADATA_PATH}/updated_at`).once('value');
+            const metaSnapshot = await window.firebaseGet(
+                window.firebaseRef(db, `${FIREBASE_METADATA_PATH}/updated_at`)
+            );
             const updatedAt = metaSnapshot.val();
 
             if (updatedAt && updatedAt !== remoteUpdatedAt) {
