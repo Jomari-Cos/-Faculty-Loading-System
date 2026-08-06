@@ -20,20 +20,19 @@ const STORAGE_KEY_ROOMS = "facultyLoadingSystem.rooms";
 // ===============================
 
 const LOCAL_CACHE_KEY = "facultyLoadingSystem.cache";
-const SUPABASE_CONFIG = window.SUPABASE_CONFIG || {};
-const SUPABASE_URL = (SUPABASE_CONFIG.url || "").replace(/\/$/, "");
-const SUPABASE_ANON_KEY = SUPABASE_CONFIG.anonKey || "";
-const SUPABASE_TABLE = SUPABASE_CONFIG.table || "faculty_loading_state";
-const SUPABASE_ROW_ID = SUPABASE_CONFIG.rowId || "main";
-const REMOTE_POLL_INTERVAL_MS = Number(SUPABASE_CONFIG.pollIntervalMs || 4000);
+const FIREBASE_ENABLED = Boolean(window.firebaseDatabase);
+const FIREBASE_ROW_ID = "main";
+const FIREBASE_PATH = `faculty_loading_system/state`;
+const FIREBASE_METADATA_PATH = `faculty_loading_system/metadata`;
+let remoteSyncListener = null;
+let firebaseInitialized = false;
 
-let remoteSyncTimer = null;
 let saveQueue = Promise.resolve();
 let remoteUpdatedAt = "";
 let suppressPersistenceDepth = 0;
 
 function isRemoteSyncEnabled() {
-    return Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
+    return Boolean(window.firebaseDatabase);
 }
 
 function getAppState() {
@@ -106,43 +105,34 @@ function isPersistenceSuppressed() {
     return suppressPersistenceDepth > 0;
 }
 
-function buildRemoteUrl() {
-    return `${SUPABASE_URL}/rest/v1/${encodeURIComponent(SUPABASE_TABLE)}`;
-}
-
-function getRemoteHeaders() {
-    return {
-        apikey: SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-        "Content-Type": "application/json"
-    };
-}
+/* Removed: buildRemoteUrl() and getRemoteHeaders() — no longer needed with Firebase */
 
 async function fetchRemoteState() {
     if (!isRemoteSyncEnabled()) {
         return null;
     }
 
-    const response = await fetch(
-        `${buildRemoteUrl()}?select=state,updated_at&id=eq.${encodeURIComponent(SUPABASE_ROW_ID)}&limit=1`,
-        {
-            method: "GET",
-            headers: getRemoteHeaders()
-        }
-    );
+    const db = window.firebaseDatabase;
+    return new Promise((resolve, reject) => {
+        db.ref(`${FIREBASE_PATH}`).once('value')
+            .then((snapshot) => {
+                const state = snapshot.val();
+                if (!state) {
+                    resolve(null);
+                    return;
+                }
 
-    if (!response.ok) {
-        throw new Error(`Failed to load remote data (${response.status})`);
-    }
-
-    const rows = await response.json();
-    const record = Array.isArray(rows) ? rows[0] : null;
-
-    if (!record || !record.state) {
-        return null;
-    }
-
-    return record;
+                db.ref(`${FIREBASE_METADATA_PATH}/updated_at`).once('value')
+                    .then((metaSnapshot) => {
+                        resolve({
+                            state: state,
+                            updated_at: metaSnapshot.val()
+                        });
+                    })
+                    .catch(reject);
+            })
+            .catch(reject);
+    });
 }
 
 async function pushRemoteState(state) {
@@ -150,28 +140,25 @@ async function pushRemoteState(state) {
         return;
     }
 
-    const response = await fetch(buildRemoteUrl(), {
-        method: "POST",
-        headers: {
-            ...getRemoteHeaders(),
-            Prefer: "resolution=merge-duplicates,return=representation"
-        },
-        body: JSON.stringify({
-            id: SUPABASE_ROW_ID,
-            state,
-            updated_at: new Date().toISOString()
-        })
+    const db = window.firebaseDatabase;
+    const timestamp = new Date().toISOString();
+
+    return new Promise((resolve, reject) => {
+        const updates = {};
+        updates[`${FIREBASE_PATH}/loads`] = state.loads;
+        updates[`${FIREBASE_PATH}/sections`] = state.sections;
+        updates[`${FIREBASE_PATH}/subjects`] = state.subjects;
+        updates[`${FIREBASE_PATH}/rooms`] = state.rooms;
+        updates[`${FIREBASE_METADATA_PATH}/updated_at`] = timestamp;
+        updates[`${FIREBASE_METADATA_PATH}/row_id`] = FIREBASE_ROW_ID;
+
+        db.ref().update(updates)
+            .then(() => {
+                remoteUpdatedAt = timestamp;
+                resolve();
+            })
+            .catch(reject);
     });
-
-    if (!response.ok) {
-        throw new Error(`Failed to save remote data (${response.status})`);
-    }
-
-    const rows = await response.json();
-    const record = Array.isArray(rows) ? rows[0] : null;
-    if (record?.updated_at) {
-        remoteUpdatedAt = record.updated_at;
-    }
 }
 
 function persistAppState() {
@@ -191,7 +178,7 @@ function persistAppState() {
         .then(() => pushRemoteState(state))
         .catch(error => {
             console.warn("Remote sync failed:", error);
-            showToast("Saved locally, but the Supabase sync failed.", "warning");
+            showToast("Saved locally, but the Firebase sync failed.", "warning");
         });
 
     return saveQueue;
@@ -243,7 +230,7 @@ function renderAllViews() {
     lucide.createIcons();
 }
 
-async function syncFromSupabase() {
+async function syncFromRemote() {
     if (!isRemoteSyncEnabled()) {
         return;
     }
@@ -270,11 +257,12 @@ async function syncFromSupabase() {
 }
 
 async function initializeRemoteSync() {
-    if (!isRemoteSyncEnabled()) {
+    if (!isRemoteSyncEnabled() || firebaseInitialized) {
         return;
     }
 
     try {
+        firebaseInitialized = true;
         const remoteRecord = await fetchRemoteState();
 
         if (remoteRecord?.state) {
@@ -288,13 +276,33 @@ async function initializeRemoteSync() {
             await pushRemoteState(getAppState());
         }
 
-        if (remoteSyncTimer) {
-            clearInterval(remoteSyncTimer);
+        /* Set up real-time listener for changes (replaces polling) */
+        if (remoteSyncListener) {
+            remoteSyncListener.off();
         }
 
-        remoteSyncTimer = setInterval(syncFromSupabase, REMOTE_POLL_INTERVAL_MS);
+        const db = window.firebaseDatabase;
+        remoteSyncListener = db.ref(FIREBASE_PATH);
+        remoteSyncListener.on('value', async (snapshot) => {
+            const state = snapshot.val();
+            if (!state) return;
+
+            const metaSnapshot = await db.ref(`${FIREBASE_METADATA_PATH}/updated_at`).once('value');
+            const updatedAt = metaSnapshot.val();
+
+            if (updatedAt && updatedAt !== remoteUpdatedAt) {
+                withPersistenceSuppressed(() => {
+                    applyAppState(state);
+                    saveLocalCache();
+                    renderAllViews();
+                });
+                remoteUpdatedAt = updatedAt;
+            }
+        });
+
     } catch (error) {
         console.warn("Remote sync initialization failed:", error);
+        firebaseInitialized = false;
     }
 }
 

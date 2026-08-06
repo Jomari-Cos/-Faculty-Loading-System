@@ -334,39 +334,33 @@ Prof. Cruz,BSCpE 1st Year A,Calculus 1,Monday,09:30,11:00,Room 102,3
 
 ### Data Persistence
 - By default, data is cached in your browser so the app can still open quickly offline
-- When Supabase is configured, the shared database becomes the main source of truth
-- Other devices will pick up changes on the next sync poll, so everyone sees the same schedule
+- When Firebase is configured, the shared database becomes the main source of truth
+- Other devices will pick up changes in real-time via Firebase listeners, so everyone sees the same schedule
 
-### Supabase Sync Setup
-1. Create a table named `faculty_loading_state` in Supabase
-2. Use this schema:
+### Firebase Sync Setup
+1. Create a Firebase project at [Firebase Console](https://console.firebase.google.com)
+2. Create a Realtime Database (choose **Realtime Database**)
+3. Set the database rules to allow read and write access
+4. Add your Firebase configuration in the `FIREBASE_CONFIG` block inside `index.html`
+5. The database path `faculty_loading_system/state` is used for shared data
 
-```sql
-create table if not exists public.faculty_loading_state (
-   id text primary key,
-   state jsonb not null,
-   updated_at timestamptz not null default now()
-);
+Example Firebase configuration in `index.html`:
+
+```html
+<script>
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_AUTH_DOMAIN",
+    databaseURL: "YOUR_DATABASE_URL",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_STORAGE_BUCKET",
+    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+    appId: "YOUR_APP_ID"
+  };
+</script>
 ```
 
-3. Add your project URL and anon key in the `SUPABASE_CONFIG` block inside `index.html`
-4. Keep `rowId` set to `main` if you want one shared timetable for all devices
-5. Make sure Row Level Security policies allow your anon key to read and write this table
-
-Example policy for a shared class project:
-
-```sql
-alter table public.faculty_loading_state enable row level security;
-
-create policy "Allow read access" on public.faculty_loading_state
-for select using (true);
-
-create policy "Allow write access" on public.faculty_loading_state
-for insert with check (true);
-
-create policy "Allow update access" on public.faculty_loading_state
-for update using (true) with check (true);
-```
+**Note:** Keep your Firebase configuration secure. Do not commit sensitive keys to public repositories.
 
 ### Starting a New Semester
 1. **Export** your current data as backup
@@ -375,7 +369,7 @@ for update using (true) with check (true);
 4. All records will be cleared
 
 ### Data Recovery
-- If Supabase sync is enabled, the reset is shared to every device using the same row
+- If Firebase sync is enabled, the reset is shared to every device using the same database path
 - If you need to undo a reset, restore from an exported file or re-import the previous data
 - Regular exports are still recommended for important data
 
@@ -461,9 +455,9 @@ for update using (true) with check (true);
 - **Action**: Choose a different time slot or day
 
 #### Remote sync is not updating other devices
-- **Cause**: Supabase URL/key are missing, or the RLS policies block access
-- **Solution**: Fill in `SUPABASE_CONFIG` and confirm the table policies allow read/write access
-- **Tip**: The app polls for changes every few seconds, so refresh delays are normal
+- **Cause**: Firebase is not initialized, or the database rules block access
+- **Solution**: Verify your Firebase config in `index.html` and confirm the database rules allow read/write access
+- **Tip**: The app uses real-time Firebase listeners, so updates appear instantly
 
 #### "has overlapping classes on [day]"
 - **Cause**: A section has two classes scheduled at the same time on the same day
