@@ -435,6 +435,7 @@ const mappingSpecialization = document.getElementById("mappingSpecialization");
 const mappingBachelors = document.getElementById("mappingBachelors");
 const mappingMasters = document.getElementById("mappingMasters");
 const mappingDoctorate = document.getElementById("mappingDoctorate");
+const mappingCourses = document.getElementById("mappingCourses");
 const editMappingIndex = document.getElementById("editMappingIndex");
 const mappingBtnText = document.getElementById("mappingBtnText");
 const cancelMappingBtn = document.getElementById("cancelMappingBtn");
@@ -2497,13 +2498,14 @@ function renderMappingTable() {
         m.specialization.toLowerCase().includes(query) ||
         (m.bachelors && m.bachelors.toLowerCase().includes(query)) ||
         (m.masters && m.masters.toLowerCase().includes(query)) ||
-        (m.doctorate && m.doctorate.toLowerCase().includes(query))
+        (m.doctorate && m.doctorate.toLowerCase().includes(query)) ||
+        (m.courses && m.courses.toLowerCase().includes(query))
     );
 
     if (facultyMapping.length === 0) {
         mappingTableBody.innerHTML = `
             <tr id="mappingEmptyState">
-                <td colspan="7" class="text-muted py-4">
+                <td colspan="8" class="text-muted py-4">
                     No faculty mapping added yet. Add your first faculty above or import from Excel.
                 </td>
             </tr>
@@ -2514,7 +2516,7 @@ function renderMappingTable() {
     if (filtered.length === 0 && facultyMapping.length > 0) {
         mappingTableBody.innerHTML = `
             <tr>
-                <td colspan="7" class="text-muted py-4">
+                <td colspan="8" class="text-muted py-4">
                     <i data-lucide="search" style="width:16px;height:16px;"></i>
                     No records match your search. Try different keywords or clear the filter.
                 </td>
@@ -2536,6 +2538,7 @@ function renderMappingTable() {
                 <td style="white-space: pre-wrap; text-align: left;">${escapeHtml(mapping.bachelors || '-')}</td>
                 <td style="white-space: pre-wrap; text-align: left;">${escapeHtml(mapping.masters || '-')}</td>
                 <td style="white-space: pre-wrap; text-align: left;">${escapeHtml(mapping.doctorate || '-')}</td>
+                <td style="white-space: pre-wrap; text-align: left;">${escapeHtml(mapping.courses || '-')}</td>
                 <td>
                     <button class="btn btn-warning btn-sm action-btn" onclick="editMapping(${originalIndex})" title="Edit this record">
                         <i data-lucide="pencil" style="width:14px;height:14px;"></i>
@@ -2559,6 +2562,7 @@ mappingForm.addEventListener("submit", function(e) {
     const bachelors = mappingBachelors.value.trim();
     const masters = mappingMasters.value.trim();
     const doctorate = mappingDoctorate.value.trim();
+    const courses = mappingCourses.value.trim();
 
     if (!name || !specialization) {
         showToast("Faculty name and specialization are required.", "error");
@@ -2570,7 +2574,8 @@ mappingForm.addEventListener("submit", function(e) {
         specialization,
         bachelors,
         masters,
-        doctorate
+        doctorate,
+        courses
     };
 
     if (editMappingIndex.value === "") {
@@ -2602,6 +2607,7 @@ function editMapping(index) {
     mappingBachelors.value = m.bachelors || "";
     mappingMasters.value = m.masters || "";
     mappingDoctorate.value = m.doctorate || "";
+    mappingCourses.value = m.courses || "";
     editMappingIndex.value = index;
     mappingBtnText.textContent = "Update Faculty";
     mappingForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -2672,42 +2678,77 @@ function processMappingImportFile(file) {
 }
 
 function importMappingRows(rows, fileName) {
-    const headers = rows[0].map(h => h.toString().toLowerCase().trim());
-    
-    const nameIdx = headers.findIndex(h => h.includes("name"));
-    const specIdx = headers.findIndex(h => h.includes("specialization") || h.includes("specialisation"));
-    const bachelorsIdx = headers.findIndex(h => h.includes("bachelor"));
-    const mastersIdx = headers.findIndex(h => h.includes("master"));
-    const doctorateIdx = headers.findIndex(h => h.includes("doctorate") || h.includes("doctor"));
+    // Detect the specific Engineering Faculty Mapping format:
+    // Row 0 = Title, Row 1 = Subtitle, Row 2 = blank,
+    // Row 3 = main headers (NO./NAME/SPECIALIZATION/EDUCATIONAL BACKGROUND),
+    // Row 4 = sub-headers (blank/blank/blank/BACHELOR'S/MASTER'S/DOCTORATE/COURSES TAUGHT),
+    // Row 5+ = data (col0=NO, col1=NAME, col2=SPEC, col3=bachelors, col4=masters, col5=doctorate, col6=courses)
 
-    if (nameIdx === -1) {
-        showToast("Could not find 'Name' column in the file.", "error");
-        return;
-    }
+    const isSpecificFormat = (() => {
+        if (rows.length < 6) return false;
+        const row3 = (rows[3] || []).map(c => (c || "").toString().toLowerCase().trim());
+        const row4 = (rows[4] || []).map(c => (c || "").toString().toLowerCase().trim());
+        const hasMainHeader = row3.some(c => c.includes("educational background")) ||
+                              (row3[1] && row3[1].includes("name") && row3[2] && row3[2].includes("specialization"));
+        const hasSubHeader  = row4.some(c => c.includes("bachelor")) ||
+                              row4.some(c => c.includes("master"));
+        return hasMainHeader || hasSubHeader;
+    })();
 
     let addedCount = 0;
     let skippedCount = 0;
 
-    for (let r = 1; r < rows.length; r++) {
-        const row = rows[r];
-        if (!row || row.every(cell => !cell || cell.toString().trim() === "")) continue;
+    if (isSpecificFormat) {
+        // Fixed column positions: B=1, C=2, D=3, E=4, F=5, G=6
+        for (let r = 5; r < rows.length; r++) {
+            const row = rows[r];
+            if (!row || row.every(cell => !cell || cell.toString().trim() === "")) continue;
 
-        const name = row[nameIdx] ? row[nameIdx].toString().trim() : "";
-        if (!name) {
-            skippedCount++;
-            continue;
+            const name = row[1] ? row[1].toString().trim() : "";
+            if (!name) { skippedCount++; continue; }
+
+            facultyMapping.push({
+                name,
+                specialization: row[2] ? row[2].toString().trim() : "",
+                bachelors:      row[3] ? row[3].toString().trim() : "",
+                masters:        row[4] ? row[4].toString().trim() : "",
+                doctorate:      row[5] ? row[5].toString().trim() : "",
+                courses:        row[6] ? row[6].toString().trim() : ""
+            });
+            addedCount++;
+        }
+    } else {
+        // Generic fallback: detect headers from first row
+        const headers = rows[0].map(h => (h || "").toString().toLowerCase().trim());
+        const nameIdx      = headers.findIndex(h => h.includes("name"));
+        const specIdx      = headers.findIndex(h => h.includes("specialization") || h.includes("specialisation"));
+        const bachelorsIdx = headers.findIndex(h => h.includes("bachelor"));
+        const mastersIdx   = headers.findIndex(h => h.includes("master"));
+        const doctorateIdx = headers.findIndex(h => h.includes("doctorate") || h.includes("doctor"));
+        const coursesIdx   = headers.findIndex(h => h.includes("course"));
+
+        if (nameIdx === -1) {
+            showToast("Could not find 'Name' column in the file.", "error");
+            return;
         }
 
-        const mappingData = {
-            name: name,
-            specialization: specIdx !== -1 && row[specIdx] ? row[specIdx].toString().trim() : "",
-            bachelors: bachelorsIdx !== -1 && row[bachelorsIdx] ? row[bachelorsIdx].toString().trim() : "",
-            masters: mastersIdx !== -1 && row[mastersIdx] ? row[mastersIdx].toString().trim() : "",
-            doctorate: doctorateIdx !== -1 && row[doctorateIdx] ? row[doctorateIdx].toString().trim() : ""
-        };
+        for (let r = 1; r < rows.length; r++) {
+            const row = rows[r];
+            if (!row || row.every(cell => !cell || cell.toString().trim() === "")) continue;
 
-        facultyMapping.push(mappingData);
-        addedCount++;
+            const name = row[nameIdx] ? row[nameIdx].toString().trim() : "";
+            if (!name) { skippedCount++; continue; }
+
+            facultyMapping.push({
+                name,
+                specialization: specIdx !== -1 && row[specIdx] ? row[specIdx].toString().trim() : "",
+                bachelors:      bachelorsIdx !== -1 && row[bachelorsIdx] ? row[bachelorsIdx].toString().trim() : "",
+                masters:        mastersIdx !== -1 && row[mastersIdx] ? row[mastersIdx].toString().trim() : "",
+                doctorate:      doctorateIdx !== -1 && row[doctorateIdx] ? row[doctorateIdx].toString().trim() : "",
+                courses:        coursesIdx !== -1 && row[coursesIdx] ? row[coursesIdx].toString().trim() : ""
+            });
+            addedCount++;
+        }
     }
 
     saveMapping();
@@ -2727,48 +2768,98 @@ exportMappingBtn.addEventListener("click", function() {
         return;
     }
 
+    // Match exact Engineering_Faculty_Mapping.xlsx format:
+    // Row 1: Title (merged A1:G1)
+    // Row 2: Subtitle (merged A2:G2)
+    // Row 3: Blank
+    // Row 4: NO. | NAME | SPECIALIZATION | EDUCATIONAL BACKGROUND (D4:G4 merged)
+    // Row 5: blank | blank | blank | BACHELOR'S DEGREE | MASTER'S DEGREE | DOCTORATE | COURSES TAUGHT
+    // Row 6+: data rows
+
+    const currentYear = new Date().getFullYear();
+    const nextYear    = currentYear + 1;
+
     const data = [
-        ["Name", "Specialization", "Bachelor's Degree", "Master's Degree", "Doctorate Degree"]
+        ["ENGINEERING FACULTY MAPPING & SPECIALIZATION", "", "", "", "", "", ""],
+        [`Academic Year ${currentYear}-${nextYear} | Faculty Educational Background & Teaching Load`, "", "", "", "", "", ""],
+        ["", "", "", "", "", "", ""],
+        ["NO.", "NAME", "SPECIALIZATION", "EDUCATIONAL BACKGROUND", "", "", ""],
+        ["",   "",     "",               "BACHELOR'S DEGREE",       "MASTER'S DEGREE", "DOCTORATE", "COURSES TAUGHT"]
     ];
 
-    facultyMapping.forEach(m => {
+    facultyMapping.forEach((m, i) => {
         data.push([
+            i + 1,
             m.name,
             m.specialization,
-            m.bachelors || "",
-            m.masters || "",
-            m.doctorate || ""
+            m.bachelors  || "",
+            m.masters    || "",
+            m.doctorate  || "",
+            m.courses    || ""
         ]);
     });
 
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.aoa_to_sheet(data);
 
-    const colWidths = data[0].map((_, colIndex) => {
-        let maxLen = 0;
-        data.forEach(row => {
-            const cellLen = String(row[colIndex] || '').length;
-            if (cellLen > maxLen) maxLen = cellLen;
-        });
-        return { wch: Math.max(maxLen + 2, 15) };
+    // Cell merges matching the reference file
+    ws['!merges'] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }, // Row 1 title
+        { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } }, // Row 2 subtitle
+        { s: { r: 2, c: 0 }, e: { r: 2, c: 6 } }, // Row 3 blank
+        { s: { r: 3, c: 0 }, e: { r: 4, c: 0 } }, // NO.  (rows 4-5)
+        { s: { r: 3, c: 1 }, e: { r: 4, c: 1 } }, // NAME (rows 4-5)
+        { s: { r: 3, c: 2 }, e: { r: 4, c: 2 } }, // SPECIALIZATION (rows 4-5)
+        { s: { r: 3, c: 3 }, e: { r: 3, c: 6 } }  // EDUCATIONAL BACKGROUND (D4:G4)
+    ];
+
+    // Column widths
+    ws['!cols'] = [
+        { wch: 6  }, // A - NO.
+        { wch: 28 }, // B - NAME
+        { wch: 28 }, // C - SPECIALIZATION
+        { wch: 32 }, // D - BACHELOR'S
+        { wch: 32 }, // E - MASTER'S
+        { wch: 24 }, // F - DOCTORATE
+        { wch: 35 }  // G - COURSES TAUGHT
+    ];
+
+    // Styles
+    const titleStyle    = { font: { bold: true, sz: 14 }, alignment: { horizontal: "center", vertical: "center" } };
+    const subtitleStyle = { font: { bold: true, sz: 11 }, alignment: { horizontal: "center", vertical: "center" } };
+    const headerStyle   = { font: { bold: true, sz: 11 }, alignment: { horizontal: "center", vertical: "center", wrapText: true } };
+    const dataStyle     = { alignment: { vertical: "top", wrapText: true } };
+
+    if (ws["A1"]) ws["A1"].s = titleStyle;
+    if (ws["A2"]) ws["A2"].s = subtitleStyle;
+
+    ["A4","B4","C4","D4","A5","B5","C5","D5","E5","F5","G5"].forEach(ref => {
+        if (ws[ref]) ws[ref].s = headerStyle;
     });
-    ws['!cols'] = colWidths;
+
+    // Apply data cell styles
+    const totalRows = data.length;
+    for (let r = 5; r < totalRows; r++) {
+        ["A","B","C","D","E","F","G"].forEach(col => {
+            const ref = col + (r + 1);
+            if (ws[ref]) ws[ref].s = dataStyle;
+        });
+    }
 
     XLSX.utils.book_append_sheet(wb, ws, "Faculty Mapping");
 
-    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-    const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement("a");
-
-    link.href = url;
-    link.download = "Faculty_Mapping.xlsx";
+    const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array", cellStyles: true });
+    const blob  = new Blob([wbout], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const url   = window.URL.createObjectURL(blob);
+    const link  = document.createElement("a");
+    link.href   = url;
+    link.download = "Engineering_Faculty_Mapping.xlsx";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
 
-    showToast(`Exported ${facultyMapping.length} record${facultyMapping.length !== 1 ? 's' : ''} as "Faculty_Mapping.xlsx".`, "success");
+    showToast(`Exported ${facultyMapping.length} record${facultyMapping.length !== 1 ? 's' : ''} as "Engineering_Faculty_Mapping.xlsx".`, "success");
 });
 
 // ===============================
