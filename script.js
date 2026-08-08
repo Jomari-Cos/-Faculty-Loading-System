@@ -391,6 +391,7 @@ const viewContainers = document.querySelectorAll(".view-container");
 const manageSectionsBtn = document.getElementById("manageSectionsBtn");
 const manageSubjectsBtn = document.getElementById("manageSubjectsBtn");
 const manageRoomsBtn = document.getElementById("manageRoomsBtn");
+const manageMappingBtn = document.getElementById("manageMappingBtn");
 const navFaculty = document.getElementById("navFaculty");
 const navMapping = document.getElementById("navMapping");
 const navRooms = document.getElementById("navRooms");
@@ -2217,6 +2218,12 @@ manageSubjectsBtn.addEventListener("click", function() {
 if (manageRoomsBtn) {
     manageRoomsBtn.addEventListener("click", function() {
         switchView('rooms');
+    });
+}
+
+if (manageMappingBtn) {
+    manageMappingBtn.addEventListener("click", function() {
+        switchView('mapping');
     });
 }
 
